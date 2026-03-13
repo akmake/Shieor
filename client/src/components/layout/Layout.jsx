@@ -3,13 +3,13 @@ import Navbar from './Navbar';
 
 export default function Layout() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100 text-slate-900">
+    <div className="app-shell min-h-screen text-slate-900">
       <Navbar />
-      <main className="flex-grow pt-20">
+      <main className="relative z-10 pt-24">
         <Outlet />
       </main>
-      <footer className="border-t border-slate-200 bg-white py-6 text-center text-sm text-slate-500">
-        <p>© {new Date().getFullYear()} MyVisit</p>
+      <footer className="relative z-10 px-4 pb-10 pt-3 text-center text-sm text-[var(--muted)]">
+        Shieor · Daily Learning
       </footer>
     </div>
   );

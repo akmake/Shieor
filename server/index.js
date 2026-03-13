@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import mongoose from 'mongoose';
 import systemRoutes from './routes/systemRoutes.js';
+import studyRoutes from './routes/studyRoutes.js';
 import { attachUserContext } from './middlewares/authMiddleware.js';
 import globalErrorHandler from './middlewares/errorMiddleware.js';
 
@@ -30,6 +31,7 @@ app.get('/api/health', (req, res) => {
 });
 
 app.use('/api/system', systemRoutes);
+app.use('/api/study', studyRoutes);
 
 app.get('/', (req, res) => {
   res.send('MyVisit API is running');

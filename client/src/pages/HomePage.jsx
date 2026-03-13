@@ -1,91 +1,88 @@
-import { useState } from 'react';
-import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-
-const studyCards = [
-  {
-    title: 'חומש יומי',
-    desc: 'העלייה היומית עם רש"י',
-    to: '/chumash',
-    color: 'bg-blue-600',
-  },
-  {
-    title: 'רמב"ם יומי',
-    desc: '3 פרקים במשנה תורה',
-    to: '/rambam',
-    color: 'bg-emerald-600',
-  },
-  {
-    title: 'תניא יומי',
-    desc: 'קטע יומי בספר התניא',
-    to: '/tanya',
-    color: 'bg-purple-600',
-  },
-  {
-    title: 'שניים מקרא',
-    desc: 'הפרשה עם תרגום אונקלוס',
-    to: '/shnayim-mikra',
-    color: 'bg-orange-600',
-  },
-];
-
-function formatDate(date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function getHebrewDayName(date) {
-  const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-  return days[date.getDay()];
-}
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import DateNavigator from '../components/study/DateNavigator';
+import StudyCard from '../components/study/StudyCard';
+import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const today = new Date();
-  const paramDate = searchParams.get('date');
-  const [date, setDate] = useState(paramDate ? new Date(paramDate) : today);
+  const [state, setState] = useState({
+    loading: true,
+    error: '',
+    data: null,
+  });
 
-  // עדכון ה-URL כשמשנים יום
-  function updateDate(newDate) {
-    setDate(newDate);
-    setSearchParams(newDate.toISOString().slice(0, 10) === formatDate(today) ? {} : { date: formatDate(newDate) });
-  }
+  const date = normalizeDate(searchParams.get('date'));
 
-  function goPrevDay() {
-    const d = new Date(date);
-    d.setDate(d.getDate() - 1);
-    updateDate(d);
-  }
-  function goNextDay() {
-    const d = new Date(date);
-    d.setDate(d.getDate() + 1);
-    updateDate(d);
-  }
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      setState((prev) => ({ ...prev, loading: true, error: '' }));
+      try {
+        const data = await getDailyStudy(date);
+        if (!alive) return;
+        setState({ loading: false, error: '', data });
+      } catch (_) {
+        if (!alive) return;
+        setState({ loading: false, error: 'לא הצלחנו לטעון את הדף היומי כרגע.', data: null });
+      }
+    }
+
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [date]);
+
+  const studies = state.data?.studies ? Object.entries(state.data.studies) : [];
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-b from-blue-50 to-slate-100 px-2 pt-8" dir="rtl" lang="he">
-      <div className="w-full max-w-md mx-auto flex flex-col gap-4">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={goPrevDay} className="rounded-full px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold">יום קודם</button>
-          <div className="text-lg font-bold text-blue-900">
-            {date.toLocaleDateString('he-IL')}<br />
-            <span className="text-xs text-slate-500">יום {getHebrewDayName(date)}</span>
+    <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+      <section className="hero-panel p-6 sm:p-8">
+        <div className="hero-bubble hero-bubble-a" />
+        <div className="hero-bubble hero-bubble-b" />
+        <div className="relative z-10 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--brand)]">Shieor</p>
+            <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] text-[var(--ink)] sm:text-5xl lg:text-6xl">
+              לומדים יומי, בצורה חכמה וברורה.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)] sm:text-lg">
+              תאריך אחד שולט בהכל, וכל מסלול מחזיר את התוכן שלו לפי הכללים שלו: חומש עם רש&quot;י,
+              רמב&quot;ם 3 פרקים, תניא יומי ושניים מקרא ואחד תרגום.
+            </p>
           </div>
-          <button onClick={goNextDay} className="rounded-full px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold">יום הבא</button>
+          <div className="glass-panel p-4 sm:p-5">
+            <p className="text-sm font-medium text-[var(--muted)]">מה כבר מחובר</p>
+            <div className="mt-3 space-y-2 text-sm leading-7 text-[var(--ink)]">
+              <p>ניווט קדימה ואחורה בין ימים.</p>
+              <p>תוכן לימוד אמיתי בתוך האתר.</p>
+              <p>תצוגה Mobile-first עם טיפוגרפיה נקייה.</p>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-1 gap-4">
-          {studyCards.map(card => (
-            <Link
-              key={card.to}
-              to={{ pathname: card.to, search: `?date=${formatDate(date)}` }}
-              className={`block rounded-2xl shadow-md p-6 text-white ${card.color} hover:scale-[1.03] transition-all`}
-            >
-              <div className="text-2xl font-black mb-1">{card.title}</div>
-              <div className="text-md font-medium opacity-80">{card.desc}</div>
-            </Link>
-          ))}
-        </div>
+      <div className="mt-5">
+        <DateNavigator
+          date={date}
+          hebrewDate={state.data?.hebrewDate}
+          onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
+          onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
+        />
       </div>
-    </main>
+
+      {state.loading ? <div className="glass-panel mt-5 p-6 text-center text-[var(--muted)]">טוען לימודי היום...</div> : null}
+      {!state.loading && state.error ? <div className="glass-panel mt-5 p-6 text-center text-[var(--ink)]">{state.error}</div> : null}
+
+      {!state.loading && !state.error ? (
+        <section className="mt-5 grid gap-4 md:grid-cols-2">
+          {studies.map(([studyKey, study]) => (
+            <StudyCard key={studyKey} studyKey={studyKey} study={study} date={date} />
+          ))}
+        </section>
+      ) : null}
+    </div>
   );
 }

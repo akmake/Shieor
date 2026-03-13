@@ -1,0 +1,65 @@
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
+import DateNavigator from '../components/study/DateNavigator';
+import StudyReader from '../components/study/StudyReader';
+import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
+
+export default function StudyPage({ studyKey }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [state, setState] = useState({
+    loading: true,
+    error: '',
+    data: null,
+  });
+
+  const date = normalizeDate(searchParams.get('date'));
+
+  useEffect(() => {
+    let alive = true;
+
+    async function load() {
+      setState((prev) => ({ ...prev, loading: true, error: '' }));
+      try {
+        const data = await getDailyStudy(date);
+        if (!alive) return;
+        setState({ loading: false, error: '', data });
+      } catch (_) {
+        if (!alive) return;
+        setState({ loading: false, error: 'לא הצלחנו לטעון את הלימוד היומי כרגע.', data: null });
+      }
+    }
+
+    load();
+    return () => {
+      alive = false;
+    };
+  }, [date]);
+
+  const study = state.data?.studies?.[studyKey];
+
+  return (
+    <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
+      <Link
+        to={`/?date=${date}`}
+        className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--ink)] shadow-sm"
+      >
+        <ArrowRight size={16} />
+        חזרה לבית
+      </Link>
+
+      <div className="mt-4">
+        <DateNavigator
+          date={date}
+          hebrewDate={state.data?.hebrewDate}
+          onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
+          onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
+        />
+      </div>
+
+      {state.loading ? <div className="glass-panel mt-4 p-6 text-center text-[var(--muted)]">טוען תוכן...</div> : null}
+      {!state.loading && state.error ? <div className="glass-panel mt-4 p-6 text-center text-[var(--ink)]">{state.error}</div> : null}
+      {!state.loading && !state.error && study ? <div className="mt-4"><StudyReader study={study} /></div> : null}
+    </div>
+  );
+}

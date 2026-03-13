@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Suspense } from 'react';
+import { Route, Routes } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import HomePage from './pages/HomePage';
 import ChumashPage from './pages/ChumashPage';
@@ -8,11 +8,7 @@ import TanyaPage from './pages/TanyaPage';
 import ShnayimMikraPage from './pages/ShnayimMikraPage';
 
 function PageLoader() {
-  return (
-    <div className="flex min-h-[50vh] items-center justify-center text-slate-500">
-      טוען עמוד...
-    </div>
-  );
+  return <div className="mx-auto mt-20 w-fit rounded-full bg-white/80 px-5 py-2 text-sm text-slate-600">טוען עמוד...</div>;
 }
 
 export default function App() {
@@ -21,11 +17,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />
+          <Route path="chumash" element={<ChumashPage />} />
+          <Route path="rambam" element={<RambamPage />} />
+          <Route path="tanya" element={<TanyaPage />} />
+          <Route path="shnayim-mikra" element={<ShnayimMikraPage />} />
         </Route>
-        <Route path="/chumash" element={<ChumashPage />} />
-        <Route path="/rambam" element={<RambamPage />} />
-        <Route path="/tanya" element={<TanyaPage />} />
-        <Route path="/shnayim-mikra" element={<ShnayimMikraPage />} />
       </Routes>
     </Suspense>
   );
