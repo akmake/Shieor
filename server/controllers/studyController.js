@@ -15,15 +15,7 @@ const STUDY_CONFIG = {
       'שישי כולל עלייה ו׳+ז׳ לפי מנהג חב"ד.',
       'בשבת מקובל לעשות חזרה כללית על הפרשה.',
     ],
-    schedule: {
-      sunday: "עלייה א'",
-      monday: "עלייה ב'",
-      tuesday: "עלייה ג'",
-      wednesday: "עלייה ד'",
-      thursday: "עלייה ה'",
-      friday: "עלייה ו' + ז'",
-      shabbat: 'חזרה כללית',
-    },
+    schedule: { sunday: "א'", monday: "ב'", tuesday: "ג'", wednesday: "ד'", thursday: "ה'", friday: "ו' + ז'", shabbat: 'חזרה' },
   },
   rambam: {
     key: 'rambam',
@@ -31,53 +23,30 @@ const STUDY_CONFIG = {
     subtitle: 'שלושה פרקים במשנה תורה',
     accent: 'emerald',
     kind: 'chapters',
-    matchers: ['daily rambam (3 chapters)', 'daily rambam', 'mishneh torah'],
+    // התיקון הקריטי: הורדנו את "mishneh torah" כדי לא להיתפס על מסלול פרק אחד
+    matchers: ['daily rambam (3 chapters)', 'daily rambam'],
     detailMode: 'plain',
-    rules: [
-      'מסלול של 3 פרקים ביום.',
-      'המחזור משלים את משנה תורה בכ-11 חודשים.',
-      'קיימים מסלולים נוספים (פרק אחד וספר המצוות), אך כאן נשארים על 3 פרקים.',
-    ],
-    schedule: {
-      track: '3 פרקים ליום',
-      cycle: 'מחזור שנתי מקוצר',
-    },
+    rules: ['מסלול של 3 פרקים ביום.'],
   },
   tanya: {
     key: 'tanya',
     title: 'תניא יומי',
-    subtitle: 'קטע יומי במחזור י״ט כסלו עד י״ט כסלו',
+    subtitle: 'קטע יומי',
     accent: 'violet',
     kind: 'segment',
     matchers: ['tanya yomi', 'daily tanya', 'tanya'],
     detailMode: 'plain',
-    rules: [
-      'חלוקה יומית רציפה לאורך שנה.',
-      'בשנה מעוברת הקטעים לרוב קצרים יותר.',
-      'בשנה פשוטה הקטעים ארוכים יותר כדי לשמור על אותו מחזור.',
-    ],
-    schedule: {
-      cycle: 'י״ט כסלו עד י״ט כסלו',
-      leapYear: 'שנה מעוברת משנה את חלוקת הקטעים',
-    },
+    rules: ['חלוקה יומית רציפה לאורך שנה.'],
   },
   shnayimMikra: {
     key: 'shnayimMikra',
-    title: 'שניים מקרא ואחד תרגום',
-    subtitle: 'פרשת השבוע עם תרגום אונקלוס',
+    title: 'שניים מקרא',
+    subtitle: 'פרשת השבוע עם אונקלוס',
     accent: 'amber',
     kind: 'parasha',
     matchers: ['parashat hashavua', 'weekly torah portion'],
     detailMode: 'onkelos',
-    rules: [
-      'קוראים כל פסוק פעמיים מקרא ופעם אחת תרגום.',
-      'החלוקה מקבילה לעליות השבוע.',
-      'מטרת המסלול להשלים את כל הפרשה לפני שבת.',
-    ],
-    schedule: {
-      cadence: 'לפי עליות השבוע',
-      completion: 'השלמת כל הפרשה לפני שבת',
-    },
+    rules: ['מטרת המסלול להשלים את כל הפרשה לפני שבת.'],
   },
 };
 
@@ -92,19 +61,32 @@ function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function stripHtml(html) {
+  if (!html) return '';
+  return String(html)
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .trim();
+}
+
 async function fetchJson(pathname, searchParams = {}) {
   const url = new URL(pathname, SEFARIA_BASE_URL);
   Object.entries(searchParams).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      url.searchParams.set(key, value);
-    }
+    if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
   });
 
   const response = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!response.ok) {
-    throw new Error(`Sefaria request failed: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
+  if (!response.ok) throw new Error(`Sefaria request failed: ${response.status}`);
+  
+  const data = await response.json();
+  if (data.error) throw new Error(`Sefaria API Error: ${data.error}`);
+  return data;
 }
 
 function flattenBlocks(value) {
@@ -116,147 +98,156 @@ function flattenBlocks(value) {
 
 function findCalendarItem(calendarItems, matchers) {
   const matchValues = matchers.map(normalizeText);
-  return (
-    calendarItems.find((item) => {
-      const titleEn = normalizeText(item?.title?.en);
-      const titleHe = normalizeText(item?.title?.he);
-      const displayEn = normalizeText(item?.displayValue?.en || item?.displayValue);
-      return matchValues.some((needle) => [titleEn, titleHe, displayEn].some((hay) => hay.includes(needle)));
-    }) || null
-  );
+  return calendarItems.find((item) => {
+    const titleEn = normalizeText(item?.title?.en);
+    const titleHe = normalizeText(item?.title?.he);
+    const displayEn = normalizeText(item?.displayValue?.en || item?.displayValue);
+    // וידוא שהטקסט מכיל את מילות המפתח (תופס את מסלול 3 הפרקים באופן בלעדי)
+    return matchValues.some((needle) => [titleEn, titleHe, displayEn].some((hay) => hay.includes(needle)));
+  }) || null;
 }
 
-function mapSections(textData) {
+function mapSectionsHebrew(textData, startVerse) {
   const hebrew = flattenBlocks(textData?.he || textData?.text);
-  const english = flattenBlocks(textData?.text);
-  const len = Math.max(hebrew.length, english.length);
   const result = [];
 
-  for (let i = 0; i < len; i += 1) {
+  for (let i = 0; i < hebrew.length; i += 1) {
     result.push({
       id: String(i + 1),
-      he: hebrew[i] || '',
-      en: english[i] || '',
+      he: stripHtml(hebrew[i]),
+      en: '',
+      rashi: [],
+      verseNum: startVerse + i,
     });
   }
-
-  return result.filter((row) => row.he || row.en).slice(0, 40);
+  return result.filter((row) => row.he);
 }
 
-function mapCommentary(textData) {
+function mapRashiOnly(textData) {
   const list = Array.isArray(textData?.commentary) ? textData.commentary : [];
   return list
+    .filter(entry => entry?.collectiveTitle?.he === 'רש"י' || entry?.collectiveTitle?.en === 'Rashi')
     .map((entry, index) => ({
-      id: entry?.ref || `commentary-${index + 1}`,
-      ref: entry?.ref || '',
-      author: entry?.collectiveTitle?.he || entry?.collectiveTitle?.en || '',
-      he: flattenBlocks(entry?.he).join(' '),
-      en: flattenBlocks(entry?.text).join(' '),
+      id: entry?.ref || `rashi-${index + 1}`,
+      anchorRef: entry?.anchorRef || '',
+      he: stripHtml(flattenBlocks(entry?.he || entry?.text).join(' ')),
     }))
-    .filter((row) => row.he || row.en)
-    .slice(0, 14);
+    .filter((row) => row.he);
 }
 
 async function fetchTextByMode(ref, mode) {
-  if (!ref) return { sections: [], commentary: [] };
+  if (!ref) return { sections: [] };
+
+  const safeRef = encodeURI(ref.replace(/ /g, '_'));
 
   if (mode === 'onkelos') {
     try {
-      const onkelosData = await fetchJson(`/api/texts/${encodeURIComponent(ref)}`, {
-        context: 0,
-        commentary: 0,
-        pad: 0,
-        vhe: 'Tanach with Text Only',
-        ven: 'Onkelos English',
-      });
-      return { sections: mapSections(onkelosData), commentary: [] };
-    } catch (_) {
-      // Fallback below to bilingual text if the Onkelos translation key is unavailable.
-    }
+      const onkelosRef = ref.startsWith('Onkelos') ? ref : `Onkelos ${ref}`;
+      const safeOnkelosRef = encodeURI(onkelosRef.replace(/ /g, '_'));
+      
+      const torahData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+      const onkelosData = await fetchJson(`/api/texts/${safeOnkelosRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+      
+      const torahHe = flattenBlocks(torahData?.he || torahData?.text);
+      const onkelosHe = flattenBlocks(onkelosData?.he || onkelosData?.text);
+      const len = Math.max(torahHe.length, onkelosHe.length);
+      const sections = [];
+      
+      for (let i = 0; i < len; i += 1) {
+        sections.push({
+          id: String(i + 1),
+          he: stripHtml(torahHe[i] || ''),
+          en: stripHtml(onkelosHe[i] || ''),
+          rashi: []
+        });
+      }
+      return { sections: sections.filter((row) => row.he || row.en) };
+    } catch (_) {}
   }
 
-  const textData = await fetchJson(`/api/texts/${encodeURIComponent(ref)}`, {
+  const textData = await fetchJson(`/api/texts/${safeRef}`, {
     context: 0,
     commentary: mode === 'rashi' ? 1 : 0,
     pad: 0,
-    lang: 'bi',
+    lang: 'he',
   });
 
-  return {
-    sections: mapSections(textData),
-    commentary: mode === 'rashi' ? mapCommentary(textData) : [],
-  };
-}
+  const baseVerseMatch = textData.ref ? textData.ref.match(/:(\d+)/) : null;
+  const startVerse = baseVerseMatch ? parseInt(baseVerseMatch[1], 10) : 1;
+  const sections = mapSectionsHebrew(textData, startVerse);
 
-function sectionPreview(sections) {
-  if (!sections.length) return '';
-  const first = sections[0];
-  const value = first.he || first.en || '';
-  return value.slice(0, 180);
-}
-
-async function resolveStudy(calendarItems, config) {
-  const item = findCalendarItem(calendarItems, config.matchers);
-  if (!item) {
-    return {
-      ...config,
-      available: false,
-      label: '',
-      ref: '',
-      heRef: '',
-      url: '',
-      sections: [],
-      commentary: [],
-      preview: '',
-    };
+  if (mode === 'rashi') {
+    const rashis = mapRashiOnly(textData);
+    rashis.forEach(r => {
+      const vNumMatch = r.anchorRef ? r.anchorRef.match(/:(\d+)/) : null;
+      const vNum = vNumMatch ? parseInt(vNumMatch[1], 10) : startVerse;
+      const targetSec = sections.find(s => s.verseNum === vNum);
+      if (targetSec) targetSec.rashi.push(r);
+      else if (sections.length > 0) sections[sections.length - 1].rashi.push(r);
+    });
   }
 
-  const textPayload = await fetchTextByMode(item.ref, config.detailMode);
+  return { sections };
+}
+
+async function resolveStudy(calendarItems, config, dateString) {
+  const item = findCalendarItem(calendarItems, config.matchers);
+  if (!item) {
+    return { ...config, available: false, label: '', ref: '', sections: [], preview: '' };
+  }
+
+  let refsToFetch = [item.ref];
+
+  // רמב"ם: משיכת מערך ה-refs המלא (ה-3 פרקים שמוחזרים מהמסלול של ה-3)
+  if (config.key === 'rambam' && Array.isArray(item.refs) && item.refs.length > 0) {
+    refsToFetch = item.refs;
+  } 
+  else if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
+    const dayOfWeek = new Date(dateString).getDay();
+    if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
+    else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
+  }
+
+  let allSections = [];
+
+  for (const r of refsToFetch) {
+    if (!r) continue;
+    try {
+      const payload = await fetchTextByMode(r, config.detailMode);
+      const startId = allSections.length;
+      const adjustedSections = payload.sections.map((s) => ({ ...s, id: String(startId + parseInt(s.id, 10)) }));
+      allSections = allSections.concat(adjustedSections);
+    } catch (err) {
+      console.error(`Failed fetching chunk ${r}:`, err.message);
+    }
+  }
+
+  const displayLabel = refsToFetch.length === 1 && refsToFetch[0] !== item.ref ? refsToFetch[0] : (item?.displayValue?.he || item.ref);
 
   return {
     ...config,
     available: true,
-    label: item?.displayValue?.he || item?.displayValue?.en || item?.displayValue || '',
+    label: displayLabel,
     ref: item?.ref || '',
-    heRef: item?.heRef || '',
-    url: item?.url || '',
-    preview: sectionPreview(textPayload.sections),
-    sections: textPayload.sections,
-    commentary: textPayload.commentary,
-    source: {
-      title: item?.title || null,
-      category: item?.category || '',
-      order: item?.order || 0,
-    },
+    preview: allSections.length ? (allSections[0].he || '').slice(0, 180) : '',
+    sections: allSections,
   };
 }
 
 export const getDailyStudy = async (req, res, next) => {
   try {
     const date = normalizeDateParam(req.query.date);
-    if (!date) {
-      res.status(400).json({ message: 'Invalid date. Expected YYYY-MM-DD.' });
-      return;
-    }
+    if (!date) return res.status(400).json({ message: 'Invalid date.' });
 
-    const calendar = await fetchJson('/api/calendars', {
-      date,
-      timezone: DEFAULT_TIMEZONE,
-    });
-
+    const calendar = await fetchJson('/api/calendars', { date, timezone: DEFAULT_TIMEZONE });
     const calendarItems = Array.isArray(calendar?.calendar_items) ? calendar.calendar_items : [];
     const studies = {};
 
     for (const config of Object.values(STUDY_CONFIG)) {
-      studies[config.key] = await resolveStudy(calendarItems, config);
+      studies[config.key] = await resolveStudy(calendarItems, config, date);
     }
 
-    res.json({
-      date,
-      timezone: DEFAULT_TIMEZONE,
-      hebrewDate: calendar?.date?.hebrew || '',
-      studies,
-    });
+    res.json({ date, timezone: DEFAULT_TIMEZONE, hebrewDate: calendar?.date?.hebrew || '', studies });
   } catch (error) {
     next(error);
   }

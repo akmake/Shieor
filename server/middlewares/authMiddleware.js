@@ -10,8 +10,23 @@ export function attachUserContext(req, res, next) {
   const configuredDefaultRole = normalizeRole(process.env.DEFAULT_APP_ROLE) || 'admin';
   const configuredDefaultName = process.env.DEFAULT_APP_USER || 'local-user';
 
-  const roleFromHeader = normalizeRole(req.header('X-User-Role'));
-  const nameFromHeader = req.header('X-User-Name');
+  let roleFromHeader = null;
+  let nameFromHeader = null;
+
+  // התיקון הקריטי: פענוח הקידוד (Decode) שהקליינט עשה כדי לחלץ עברית בחזרה
+  try {
+    const rawRole = req.header('X-User-Role');
+    const rawName = req.header('X-User-Name');
+    
+    if (rawRole) {
+      roleFromHeader = normalizeRole(decodeURIComponent(rawRole));
+    }
+    if (rawName) {
+      nameFromHeader = decodeURIComponent(rawName);
+    }
+  } catch (err) {
+    console.warn('Failed to decode auth headers:', err.message);
+  }
 
   req.user = {
     role: roleFromHeader || configuredDefaultRole,

@@ -8,6 +8,9 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Assistant', 'sans-serif'],
+        // הפונטים הייעודיים לטקסט הלימוד
+        sbl: ['"SBL Hebrew"', 'serif'],
+        rashi: ['"BA HaYetzira"', 'sans-serif'],
       },
       // כאן אנחנו מחברים את המשתנים מ-index.css לשמות של Tailwind
       colors: {

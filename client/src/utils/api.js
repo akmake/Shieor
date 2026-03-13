@@ -57,8 +57,12 @@ api.interceptors.request.use(
       // Do not block the request on analytics header failures
     }
 
-    config.headers['X-User-Role'] = getUserRole();
-    config.headers['X-User-Name'] = getUserName();
+    // התיקון הקריטי: קידוד בטוח של הערכים כדי למנוע קריסה של הדפדפן (ISO-8859-1)
+    const role = getUserRole() || '';
+    const name = getUserName() || '';
+    
+    config.headers['X-User-Role'] = encodeURIComponent(role);
+    config.headers['X-User-Name'] = encodeURIComponent(name);
 
     return config;
   },

@@ -1,12 +1,37 @@
+import React from 'react';
+
 function StudyTextRow({ row, index, showSecondary }) {
   return (
-    <article className="reader-row">
-      <div className="reader-index">{index + 1}</div>
-      <div className="min-w-0 flex-1">
-        {row.he ? <p className="reader-he">{row.he}</p> : null}
-        {showSecondary && row.en ? <p className="reader-en">{row.en}</p> : null}
-      </div>
-    </article>
+    <div className="mb-8">
+      {/* הפסוק (והאונקלוס אם זה שניים מקרא) */}
+      <article className="reader-row">
+        <div className="reader-index">{index + 1}</div>
+        <div className="min-w-0 flex-1">
+          {/* הזרקת הפונט SBL Hebrew בגודל מוגדל */}
+          {row.he ? <p className="reader-he text-2xl leading-[2.5rem] text-[var(--ink)] font-sbl">{row.he}</p> : null}
+          
+          {/* אונקלוס (מקבל גם את אותו פונט) */}
+          {showSecondary && row.en ? (
+            <p className="reader-en mt-2 text-xl font-medium leading-9 text-[var(--muted)] font-sbl">
+              {row.en}
+            </p>
+          ) : null}
+        </div>
+      </article>
+
+      {/* הרש"י צמוד מיד מתחת לפסוק */}
+      {row.rashi && row.rashi.length > 0 && (
+        <div className="mt-4 ml-2 mr-10 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] p-4 shadow-sm sm:mr-12">
+          {row.rashi.map((r, rIdx) => (
+            <div key={`${row.id}-rashi-${rIdx}`}>
+              <span className="text-xs font-bold text-[#b58900] mb-1 block">רש"י:</span>
+              {/* הזרקת הפונט BA HaYetzira לרש"י */}
+              <p className="text-xl leading-8 text-[var(--ink)] font-rashi">{r.he}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -40,38 +65,21 @@ export default function StudyReader({ study }) {
       <section className="glass-panel p-5 sm:p-6">
         <h2 className="text-2xl font-semibold text-[var(--ink)]">תוכן הלימוד של היום</h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          {showSecondary ? 'מקרא וטקסט תרגום מוצגים יחד לקריאה רציפה.' : 'הקטע היומי מוצג כאן ישירות בתוך האפליקציה.'}
+          {showSecondary ? 'מקרא ותרגום אונקלוס מוצגים יחד לקריאה רציפה.' : 'הקטע היומי מוצג כאן עם רש"י לכל פסוק (במידה וקיים).'}
         </p>
 
         {Array.isArray(study.sections) && study.sections.length > 0 ? (
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 space-y-2">
             {study.sections.map((row, index) => (
               <StudyTextRow key={row.id || `${index + 1}`} row={row} index={index} showSecondary={showSecondary} />
             ))}
           </div>
         ) : (
           <div className="mt-5 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--soft)] p-5 text-sm text-[var(--muted)]">
-            לא חזר תוכן טקסטואלי עבור היום הזה. המיפוי כבר מחזיר את הייחוס היומי, ונוכל לדייק עוד את גרסת הטקסט אם תרצה.
+            לא חזר תוכן טקסטואלי עבור היום הזה. 
           </div>
         )}
       </section>
-
-      {Array.isArray(study.commentary) && study.commentary.length > 0 ? (
-        <section className="glass-panel p-5 sm:p-6">
-          <h2 className="text-2xl font-semibold text-[var(--ink)]">רש"י</h2>
-          <div className="mt-4 space-y-4">
-            {study.commentary.map((entry) => (
-              <article key={entry.id} className="rounded-2xl border border-[var(--line)] bg-white/80 p-4 shadow-sm">
-                <p className="text-sm font-semibold text-[var(--ink)]">
-                  {entry.author || 'רש"י'} {entry.ref ? `· ${entry.ref}` : ''}
-                </p>
-                {entry.he ? <p className="mt-3 text-lg leading-9 text-[var(--ink)]">{entry.he}</p> : null}
-                {entry.en ? <p className="mt-3 text-sm leading-7 text-[var(--muted)]">{entry.en}</p> : null}
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 }
