@@ -23,9 +23,8 @@ const STUDY_CONFIG = {
     subtitle: 'שלושה פרקים במשנה תורה',
     accent: 'emerald',
     kind: 'chapters',
-    // התיקון הקריטי: הורדנו את "mishneh torah" כדי לא להיתפס על מסלול פרק אחד
     matchers: ['daily rambam (3 chapters)', 'daily rambam'],
-    detailMode: 'plain',
+    detailMode: 'rambam', // שינינו מצב ייעודי לרמב"ם שיתמוך במערך דו-ממדי
     rules: ['מסלול של 3 פרקים ביום.'],
   },
   tanya: {
@@ -49,6 +48,30 @@ const STUDY_CONFIG = {
     rules: ['מטרת המסלול להשלים את כל הפרשה לפני שבת.'],
   },
 };
+
+const HEBREW_ORDINALS = [
+  "", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
+  "יא", "יב", "יג", "יד", "טו", "טז", "יז", "יח", "יט", "כ",
+  "כא", "כב", "כג", "כד", "כה", "כו", "כז", "כח", "כט", "ל",
+  "לא", "לב", "לג", "לד", "לה", "לו", "לז", "לח", "לט", "מ"
+];
+
+function getHebrewOrdinal(n) {
+  if (n >= 1 && n < HEBREW_ORDINALS.length) return HEBREW_ORDINALS[n];
+  return String(n);
+}
+
+function parseStartChapter(ref) {
+  if (!ref) return 1;
+  const parts = ref.split(' ');
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    if (/^\d+(-\d+)?$/.test(p)) {
+      return parseInt(p.split('-')[0], 10);
+    }
+  }
+  return 1;
+}
 
 function normalizeDateParam(value) {
   if (!value) return new Date().toISOString().slice(0, 10);
@@ -96,24 +119,83 @@ function flattenBlocks(value) {
   return text ? [text] : [];
 }
 
-function findCalendarItem(calendarItems, matchers) {
+function findCalendarItem(calendarItems, matchers, configKey) {
   const matchValues = matchers.map(normalizeText);
-  return calendarItems.find((item) => {
+  const matches = calendarItems.filter((item) => {
     const titleEn = normalizeText(item?.title?.en);
     const titleHe = normalizeText(item?.title?.he);
     const displayEn = normalizeText(item?.displayValue?.en || item?.displayValue);
-    // וידוא שהטקסט מכיל את מילות המפתח (תופס את מסלול 3 הפרקים באופן בלעדי)
     return matchValues.some((needle) => [titleEn, titleHe, displayEn].some((hay) => hay.includes(needle)));
-  }) || null;
+  });
+
+  if (configKey === 'rambam' && matches.length > 0) {
+    const threeChaptersTrack = matches.find(m => (m.refs && m.refs.length >= 2) || (m.ref && m.ref.includes('-')));
+    if (threeChaptersTrack) return threeChaptersTrack;
+  }
+  return matches[0] || null;
+}
+
+// הלוגיקה החדשה לרמב"ם שמתרגמת את Java ל-JS
+function parseRambamAndroidStyle(textData) {
+  const heRaw = textData?.he || textData?.text;
+  if (!heRaw || !Array.isArray(heRaw)) return [];
+
+  const startChapter = parseStartChapter(textData.ref);
+  const result = [];
+  let globalId = 1;
+
+  if (Array.isArray(heRaw[0])) {
+    // מערך דו ממדי - 3 פרקים
+    heRaw.forEach((chapterArr, chIndex) => {
+      const actualChapterNum = startChapter + chIndex;
+      
+      // הזרקת כותרת הפרק בדומה לאנדרואיד
+      result.push({
+        id: String(globalId++),
+        isHeader: true,
+        he: `פרק ${getHebrewOrdinal(actualChapterNum)}`,
+        en: '',
+        rashi: []
+      });
+
+      // הזרקת ההלכות
+      chapterArr.forEach((halakha, hIndex) => {
+        if (halakha && typeof halakha === 'string') {
+          result.push({
+            id: String(globalId++),
+            isHeader: false,
+            // הצמדת אות ההלכה (א, ב) לתחילת הפסוק כמו אצלך
+            he: `${getHebrewOrdinal(hIndex + 1)}.  ${stripHtml(halakha)}`,
+            en: '',
+            rashi: []
+          });
+        }
+      });
+    });
+  } else {
+    // פרק יחיד (גיבוי)
+    heRaw.forEach((halakha, hIndex) => {
+      if (halakha && typeof halakha === 'string') {
+        result.push({
+          id: String(globalId++),
+          isHeader: false,
+          he: `${getHebrewOrdinal(hIndex + 1)}.  ${stripHtml(halakha)}`,
+          en: '',
+          rashi: []
+        });
+      }
+    });
+  }
+  return result;
 }
 
 function mapSectionsHebrew(textData, startVerse) {
   const hebrew = flattenBlocks(textData?.he || textData?.text);
   const result = [];
-
   for (let i = 0; i < hebrew.length; i += 1) {
     result.push({
       id: String(i + 1),
+      isHeader: false,
       he: stripHtml(hebrew[i]),
       en: '',
       rashi: [],
@@ -137,14 +219,12 @@ function mapRashiOnly(textData) {
 
 async function fetchTextByMode(ref, mode) {
   if (!ref) return { sections: [] };
-
   const safeRef = encodeURI(ref.replace(/ /g, '_'));
 
   if (mode === 'onkelos') {
     try {
       const onkelosRef = ref.startsWith('Onkelos') ? ref : `Onkelos ${ref}`;
       const safeOnkelosRef = encodeURI(onkelosRef.replace(/ /g, '_'));
-      
       const torahData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
       const onkelosData = await fetchJson(`/api/texts/${safeOnkelosRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
       
@@ -156,6 +236,7 @@ async function fetchTextByMode(ref, mode) {
       for (let i = 0; i < len; i += 1) {
         sections.push({
           id: String(i + 1),
+          isHeader: false,
           he: stripHtml(torahHe[i] || ''),
           en: stripHtml(onkelosHe[i] || ''),
           rashi: []
@@ -171,6 +252,10 @@ async function fetchTextByMode(ref, mode) {
     pad: 0,
     lang: 'he',
   });
+
+  if (mode === 'rambam') {
+    return { sections: parseRambamAndroidStyle(textData) };
+  }
 
   const baseVerseMatch = textData.ref ? textData.ref.match(/:(\d+)/) : null;
   const startVerse = baseVerseMatch ? parseInt(baseVerseMatch[1], 10) : 1;
@@ -191,22 +276,20 @@ async function fetchTextByMode(ref, mode) {
 }
 
 async function resolveStudy(calendarItems, config, dateString) {
-  const item = findCalendarItem(calendarItems, config.matchers);
+  const item = findCalendarItem(calendarItems, config.matchers, config.key);
   if (!item) {
     return { ...config, available: false, label: '', ref: '', sections: [], preview: '' };
   }
 
   let refsToFetch = [item.ref];
 
-  // רמב"ם: משיכת מערך ה-refs המלא (ה-3 פרקים שמוחזרים מהמסלול של ה-3)
-  if (config.key === 'rambam' && Array.isArray(item.refs) && item.refs.length > 0) {
-    refsToFetch = item.refs;
-  } 
-  else if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
+  // חומש מפוצל כדי לא לקרוס
+  if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
     const dayOfWeek = new Date(dateString).getDay();
     if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
     else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
   }
+  // הרמב"ם לא מפוצל יותר! ספאריה תקבל את הרפרנס בשלמותו כפי שהוכחת!
 
   let allSections = [];
 
