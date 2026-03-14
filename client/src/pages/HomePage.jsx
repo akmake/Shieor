@@ -1,22 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Download } from 'lucide-react';
 import DateNavigator from '../components/study/DateNavigator';
 import StudyCard from '../components/study/StudyCard';
-import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
+import { getDailyStudy, downloadMonth, normalizeDate, shiftDate } from '../utils/study';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [state, setState] = useState({
-    loading: true,
-    error: '',
-    data: null,
-  });
+  const [state, setState] = useState({ loading: true, error: '', data: null });
+  const [dlState, setDlState] = useState({ active: false, current: 0, total: 30, done: false });
 
   const date = normalizeDate(searchParams.get('date'));
 
   useEffect(() => {
     let alive = true;
-
     async function load() {
       setState((prev) => ({ ...prev, loading: true, error: '' }));
       try {
@@ -28,12 +25,22 @@ export default function HomePage() {
         setState({ loading: false, error: 'לא הצלחנו לטעון את הדף היומי כרגע.', data: null });
       }
     }
-
     load();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [date]);
+
+  async function handleDownloadMonth() {
+    setDlState({ active: true, current: 0, total: 30, done: false });
+    try {
+      await downloadMonth(date, (current, total) => {
+        setDlState({ active: true, current, total, done: false });
+      });
+      setDlState({ active: false, current: 30, total: 30, done: true });
+      setTimeout(() => setDlState((s) => ({ ...s, done: false })), 3000);
+    } catch (_) {
+      setDlState({ active: false, current: 0, total: 30, done: false });
+    }
+  }
 
   const studies = state.data?.studies ? Object.entries(state.data.studies) : [];
 
@@ -59,18 +66,34 @@ export default function HomePage() {
               <p>ניווט קדימה ואחורה בין ימים.</p>
               <p>תוכן לימוד אמיתי בתוך האתר.</p>
               <p>תצוגה Mobile-first עם טיפוגרפיה נקייה.</p>
+              <p>שמירה אוטומטית לשימוש אופליין.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <div className="mt-5">
-        <DateNavigator
-          date={date}
-          hebrewDate={state.data?.hebrewDate}
-          onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
-          onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
-        />
+      <div className="mt-5 flex items-center gap-3 flex-wrap">
+        <div className="flex-1">
+          <DateNavigator
+            date={date}
+            hebrewDate={state.data?.hebrewDate}
+            onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
+            onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
+          />
+        </div>
+
+        <button
+          onClick={handleDownloadMonth}
+          disabled={dlState.active}
+          className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--ink)] shadow-sm transition hover:bg-[#f0f4ff] disabled:opacity-60"
+        >
+          <Download size={15} />
+          {dlState.active
+            ? `מוריד ${dlState.current} / ${dlState.total}...`
+            : dlState.done
+            ? '✓ הורד בהצלחה'
+            : 'הורד חודש קדימה'}
+        </button>
       </div>
 
       {state.loading ? <div className="glass-panel mt-5 p-6 text-center text-[var(--muted)]">טוען לימודי היום...</div> : null}

@@ -1,23 +1,29 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play, Pause } from 'lucide-react';
 import DateNavigator from '../components/study/DateNavigator';
 import StudyReader from '../components/study/StudyReader';
 import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
 
+function getScrollSpeed() {
+  try {
+    return JSON.parse(localStorage.getItem('shieor-settings') || '{}').scrollSpeed ?? 40;
+  } catch (_) {
+    return 40;
+  }
+}
+
 export default function StudyPage({ studyKey }) {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [state, setState] = useState({
-    loading: true,
-    error: '',
-    data: null,
-  });
+  const [state, setState] = useState({ loading: true, error: '', data: null });
+  const [autoScroll, setAutoScroll] = useState(false);
+  const scrollIntervalRef = useRef(null);
 
   const date = normalizeDate(searchParams.get('date'));
+  const scrollKey = `shieor-pos-${studyKey}-${date}`;
 
   useEffect(() => {
     let alive = true;
-
     async function load() {
       setState((prev) => ({ ...prev, loading: true, error: '' }));
       try {
@@ -29,24 +35,65 @@ export default function StudyPage({ studyKey }) {
         setState({ loading: false, error: 'לא הצלחנו לטעון את הלימוד היומי כרגע.', data: null });
       }
     }
-
     load();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [date]);
+
+  // שמירת מיקום גלילה
+  useEffect(() => {
+    const handleScroll = () => localStorage.setItem(scrollKey, String(window.scrollY));
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrollKey]);
+
+  // שחזור מיקום גלילה לאחר טעינת תוכן
+  useEffect(() => {
+    if (state.loading) return;
+    const saved = localStorage.getItem(scrollKey);
+    if (saved) setTimeout(() => window.scrollTo({ top: parseInt(saved, 10), behavior: 'instant' }), 100);
+  }, [state.loading, scrollKey]);
+
+  // גלילה אוטומטית
+  useEffect(() => {
+    if (autoScroll) {
+      const msPerPx = Math.round(1000 / getScrollSpeed());
+      scrollIntervalRef.current = setInterval(() => {
+        window.scrollBy({ top: 1, behavior: 'instant' });
+        if (window.scrollY + window.innerHeight >= document.body.scrollHeight - 10) {
+          setAutoScroll(false);
+        }
+      }, msPerPx);
+    } else {
+      clearInterval(scrollIntervalRef.current);
+    }
+    return () => clearInterval(scrollIntervalRef.current);
+  }, [autoScroll]);
 
   const study = state.data?.studies?.[studyKey];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-      <Link
-        to={`/?date=${date}`}
-        className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--ink)] shadow-sm"
-      >
-        <ArrowRight size={16} />
-        חזרה לבית
-      </Link>
+      <div className="flex items-center gap-3 flex-wrap">
+        <Link
+          to={`/?date=${date}`}
+          className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2 text-sm font-medium text-[var(--ink)] shadow-sm"
+        >
+          <ArrowRight size={16} />
+          חזרה
+        </Link>
+
+        <button
+          onClick={() => setAutoScroll((v) => !v)}
+          className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition ${
+            autoScroll
+              ? 'border-[var(--brand)] bg-[var(--brand)] text-white'
+              : 'border-[var(--line)] bg-white/80 text-[var(--ink)]'
+          }`}
+        >
+          {autoScroll ? <Pause size={14} /> : <Play size={14} />}
+          {autoScroll ? 'עצור' : 'גלילה אוטומטית'}
+        </button>
+      </div>
 
       <div className="mt-4">
         <DateNavigator

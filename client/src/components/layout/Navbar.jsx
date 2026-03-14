@@ -1,5 +1,5 @@
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BookOpenText, House, Layers3, Sparkles, ScrollText } from 'lucide-react';
+import { BookOpenText, House, Layers3, Settings, Sparkles, ScrollText } from 'lucide-react';
 
 const ITEMS = [
   { to: '/', label: 'בית', icon: House, end: true },
@@ -7,6 +7,7 @@ const ITEMS = [
   { to: '/rambam', label: 'רמב"ם', icon: Layers3 },
   { to: '/tanya', label: 'תניא', icon: Sparkles },
   { to: '/shnayim-mikra', label: 'שניים מקרא', icon: ScrollText },
+  { to: '/settings', label: 'הגדרות', icon: Settings },
 ];
 
 export default function Navbar() {

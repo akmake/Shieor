@@ -1,42 +1,61 @@
 import React from 'react';
 
-function StudyTextRow({ row, index, showSecondary }) {
-  return (
-    <div className="mb-8">
-      {/* הפסוק (והאונקלוס אם זה שניים מקרא) */}
-      <article className="reader-row">
-        <div className="reader-index">{index + 1}</div>
-        <div className="min-w-0 flex-1">
-          {/* הזרקת הפונט SBL Hebrew בגודל מוגדל */}
-          {row.he ? <p className="reader-he text-2xl leading-[2.5rem] text-[var(--ink)] font-sbl">{row.he}</p> : null}
-          
-          {/* אונקלוס (מקבל גם את אותו פונט) */}
-          {showSecondary && row.en ? (
-            <p className="reader-en mt-2 text-xl font-medium leading-9 text-[var(--muted)] font-sbl">
-              {row.en}
-            </p>
-          ) : null}
-        </div>
-      </article>
+function getSettings() {
+  try {
+    return JSON.parse(localStorage.getItem('shieor-settings') || '{}');
+  } catch (_) {
+    return {};
+  }
+}
 
-      {/* הרש"י צמוד מיד מתחת לפסוק */}
-      {row.rashi && row.rashi.length > 0 && (
-        <div className="mt-4 ml-2 mr-10 space-y-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] p-4 shadow-sm sm:mr-12">
-          {row.rashi.map((r, rIdx) => (
-            <div key={`${row.id}-rashi-${rIdx}`}>
-              <span className="text-xs font-bold text-[#b58900] mb-1 block">רש"י:</span>
-              {/* הזרקת הפונט BA HaYetzira לרש"י */}
-              <p className="text-xl leading-8 text-[var(--ink)] font-rashi">{r.he}</p>
+function StudyTextRow({ row, isShnayimMikra }) {
+  if (row.isHeader) {
+    return (
+      <div className="mt-8 mb-3 pb-2 border-b-2 border-[var(--line)]">
+        <h3 className="text-lg font-bold text-[var(--ink)]">{row.he}</h3>
+      </div>
+    );
+  }
+
+  const { fontSize = 20 } = getSettings();
+  const rashiFontSize = Math.max(12, fontSize - 4);
+
+  return (
+    <div className="mb-6">
+      {isShnayimMikra ? (
+        <>
+          <p style={{ fontSize }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
+          <p style={{ fontSize }} className="mt-1 leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
+          {row.en ? (
+            <p style={{ fontSize: rashiFontSize }} className="mt-2 leading-8 text-[var(--muted)] font-sbl">{row.en}</p>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {row.he ? (
+            <p style={{ fontSize }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
+          ) : null}
+
+          {row.rashi && row.rashi.length > 0 && (
+            <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] px-4 py-3">
+              <span style={{ fontSize: 11 }} className="font-bold text-[#b58900] mb-2 block tracking-wide">רש״י</span>
+              <div className="space-y-2">
+                {row.rashi.map((r, rIdx) => (
+                  <p key={`${row.id}-rashi-${rIdx}`} style={{ fontSize: rashiFontSize }} className="leading-7 text-[var(--ink)] font-rashi">
+                    {r.he}
+                  </p>
+                ))}
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
 }
 
 export default function StudyReader({ study }) {
-  const showSecondary = study.key === 'shnayimMikra';
+  const isShnayimMikra = study.key === 'shnayimMikra';
 
   return (
     <div className="space-y-5">
@@ -64,19 +83,23 @@ export default function StudyReader({ study }) {
 
       <section className="glass-panel p-5 sm:p-6">
         <h2 className="text-2xl font-semibold text-[var(--ink)]">תוכן הלימוד של היום</h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          {showSecondary ? 'מקרא ותרגום אונקלוס מוצגים יחד לקריאה רציפה.' : 'הקטע היומי מוצג כאן עם רש"י לכל פסוק (במידה וקיים).'}
-        </p>
+        {isShnayimMikra && (
+          <p className="mt-1 text-sm text-[var(--muted)]">כל פסוק מוצג פעמיים בעברית ופעם אחת תרגום אונקלוס.</p>
+        )}
 
         {Array.isArray(study.sections) && study.sections.length > 0 ? (
-          <div className="mt-5 space-y-2">
+          <div className="mt-5">
             {study.sections.map((row, index) => (
-              <StudyTextRow key={row.id || `${index + 1}`} row={row} index={index} showSecondary={showSecondary} />
+              <StudyTextRow
+                key={row.id || `${index + 1}`}
+                row={row}
+                isShnayimMikra={isShnayimMikra}
+              />
             ))}
           </div>
         ) : (
           <div className="mt-5 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--soft)] p-5 text-sm text-[var(--muted)]">
-            לא חזר תוכן טקסטואלי עבור היום הזה. 
+            לא חזר תוכן טקסטואלי עבור היום הזה.
           </div>
         )}
       </section>

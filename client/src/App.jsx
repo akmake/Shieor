@@ -6,6 +6,7 @@ import ChumashPage from './pages/ChumashPage';
 import RambamPage from './pages/RambamPage';
 import TanyaPage from './pages/TanyaPage';
 import ShnayimMikraPage from './pages/ShnayimMikraPage';
+import SettingsPage from './pages/SettingsPage';
 
 function PageLoader() {
   return <div className="mx-auto mt-20 w-fit rounded-full bg-white/80 px-5 py-2 text-sm text-slate-600">טוען עמוד...</div>;
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="rambam" element={<RambamPage />} />
           <Route path="tanya" element={<TanyaPage />} />
           <Route path="shnayim-mikra" element={<ShnayimMikraPage />} />
+          <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>
     </Suspense>

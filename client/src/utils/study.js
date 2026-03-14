@@ -1,4 +1,5 @@
 import api from './api';
+import { saveStudyData, getStudyData } from './db';
 
 export const STUDY_ROUTES = { chumash: '/chumash', rambam: '/rambam', tanya: '/tanya', shnayimMikra: '/shnayim-mikra' };
 const SEFARIA_BASE_URL = 'https://www.sefaria.org';
@@ -6,7 +7,6 @@ const TIMEZONE = 'Asia/Jerusalem';
 
 const FALLBACK_STUDIES = {
   chumash: { key: 'chumash', title: 'חומש עם רש"י', subtitle: 'העלייה היומית מתוך פרשת השבוע', accent: 'blue', kind: 'aliyah', matchers: ['daily chumash', 'chumash', 'parashat hashavua'], detailMode: 'rashi' },
-  // התיקון גם בלקוח - הסרת mishneh torah מהרמב"ם
   rambam: { key: 'rambam', title: 'רמב"ם יומי', subtitle: 'שלושה פרקים במשנה תורה', accent: 'emerald', kind: 'chapters', matchers: ['daily rambam (3 chapters)', 'daily rambam'], detailMode: 'plain' },
   tanya: { key: 'tanya', title: 'תניא יומי', subtitle: 'קטע יומי', accent: 'violet', kind: 'segment', matchers: ['tanya yomi', 'daily tanya', 'tanya'], detailMode: 'plain' },
   shnayimMikra: { key: 'shnayimMikra', title: 'שניים מקרא', subtitle: 'פרשת השבוע עם תרגום', accent: 'amber', kind: 'parasha', matchers: ['parashat hashavua', 'weekly torah portion'], detailMode: 'onkelos' },
@@ -32,7 +32,7 @@ function normalizeText(value) { return String(value || '').trim().toLowerCase();
 
 function stripHtml(html) {
   if (!html) return '';
-  return String(html).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  return String(html).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
 }
 
 function flatten(value) {
@@ -89,7 +89,7 @@ async function fetchStudyText(ref, detailMode) {
       const onkelosHe = flatten(onkelosData?.he || onkelosData?.text);
       const total = Math.max(torahHe.length, onkelosHe.length);
       const sections = [];
-      for (let i = 0; i < total; i += 1) sections.push({ id: String(i + 1), he: stripHtml(torahHe[i] || ''), en: stripHtml(onkelosHe[i] || ''), rashi: [] });
+      for (let i = 0; i < total; i += 1) sections.push({ id: String(i + 1), he: stripHtml(torahHe[i] || ''), en: stripHtml(onkelosHe[i] || ''), rashi: [], verseNum: i + 1 });
       return { sections: sections.filter((row) => row.he || row.en) };
     } catch (_) {}
   }
@@ -127,7 +127,6 @@ async function buildDailyStudyFallback(dateString) {
     }
 
     let refsToFetch = [item.ref];
-    
     if (config.key === 'rambam' && Array.isArray(item.refs) && item.refs.length > 0) {
       refsToFetch = item.refs;
     } else if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
@@ -148,7 +147,8 @@ async function buildDailyStudyFallback(dateString) {
     }
 
     studies[config.key] = {
-      ...config, available: true, label: refsToFetch.length === 1 && refsToFetch[0] !== item.ref ? refsToFetch[0] : (item?.displayValue?.he || item.ref),
+      ...config, available: true,
+      label: refsToFetch.length === 1 && refsToFetch[0] !== item.ref ? refsToFetch[0] : (item?.displayValue?.he || item.ref),
       ref: item?.ref || '', sections: allSections,
     };
   }
@@ -158,10 +158,32 @@ async function buildDailyStudyFallback(dateString) {
 
 export async function getDailyStudy(dateString) {
   const date = normalizeDate(dateString);
+
+  try {
+    const cached = await getStudyData(date);
+    if (cached) return cached;
+  } catch (_) {}
+
+  let result;
   try {
     const { data } = await api.get('/api/study/day', { params: { date } });
-    return data;
-  } catch (apiError) {
-    return buildDailyStudyFallback(date);
+    result = data;
+  } catch (_) {
+    result = await buildDailyStudyFallback(date);
+  }
+
+  try {
+    await saveStudyData(date, result);
+  } catch (_) {}
+
+  return result;
+}
+
+export async function downloadMonth(startDate, onProgress) {
+  const date = normalizeDate(startDate);
+  for (let i = 0; i < 30; i++) {
+    const d = shiftDate(date, i);
+    if (onProgress) onProgress(i + 1, 30);
+    await getDailyStudy(d);
   }
 }
