@@ -34,8 +34,8 @@ function AliyahHeader({ text }) {
 
 function ChapterHeader({ text }) {
   return (
-    <div style={{ textAlign: 'center', padding: '0.75rem 0 0.4rem' }}>
-      <span style={{ color: TEAL, fontSize: '1rem', fontWeight: '400', opacity: 0.8 }} className="font-sbl">
+    <div style={{ textAlign: 'center', padding: '0.4rem 0 0.25rem' }}>
+      <span style={{ color: TEAL, fontSize: '2rem', fontWeight: '700' }} className="font-sbl">
         {text}
       </span>
     </div>
@@ -57,7 +57,7 @@ function RashiBlock({ rashi, rowId, rashiFontSize }) {
       {rashi.map((r, i) => (
         <p
           key={`${rowId}-r${i}`}
-          style={{ fontSize: rashiFontSize, lineHeight: 1.75, margin: i < rashi.length - 1 ? '0 0 0.35rem 0' : 0, textAlign: 'justify' }}
+          style={{ fontSize: rashiFontSize, lineHeight: 1.6, margin: i < rashi.length - 1 ? '0 0 0.35rem 0' : 0, textAlign: 'justify' }}
           className="font-sbl text-[var(--ink)]"
         >
           {r.he}
@@ -71,12 +71,12 @@ function RashiBlock({ rashi, rowId, rashiFontSize }) {
 function HalachaRow({ row, fontSize, rashiFontSize }) {
   const hasRashi = row.rashi?.length > 0;
   return (
-    <div style={{ marginBottom: '0.85rem' }}>
+    <div style={{ marginBottom: '0.4rem' }}>
       <p
-        style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }}
+        style={{ fontSize, lineHeight: 1.5, textAlign: 'justify', margin: 0 }}
         className="font-sbl text-[var(--ink)]"
       >
-        <span style={{ fontWeight: '700', color: TEAL, fontSize: fontSize + 1 }}>
+        <span style={{ fontWeight: '700', color: TEAL, fontSize: fontSize + 6 }}>
           {row.ordinal}{'\u00A0'}
         </span>
         {row.he}
@@ -96,7 +96,7 @@ function VerseRow({ row, fontSize, rashiFontSize, isShnayimMikra, shnayimMikraCo
       // רצוף: שני פסוקים + תרגום בשורה אחת
       return (
         <div style={{ marginBottom: '0.9rem' }}>
-          <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
+          <p style={{ fontSize, lineHeight: 1.6, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
             {prefix}{row.he}{' '}
             {prefix}{row.he}
             {row.en ? <span style={{ color: 'var(--muted)' }}>{' '}{row.en}</span> : null}
@@ -107,16 +107,16 @@ function VerseRow({ row, fontSize, rashiFontSize, isShnayimMikra, shnayimMikraCo
     // מופרד: כל שורה בנפרד
     return (
       <div style={{ marginBottom: '0.9rem' }}>
-        <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
-        <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
-        {row.en ? <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0, color: 'var(--muted)' }} className="font-sbl">{row.en}</p> : null}
+        <p style={{ fontSize, lineHeight: 1.6, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
+        <p style={{ fontSize, lineHeight: 1.6, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
+        {row.en ? <p style={{ fontSize, lineHeight: 1.6, textAlign: 'justify', margin: 0, color: 'var(--muted)' }} className="font-sbl">{row.en}</p> : null}
       </div>
     );
   }
 
   return (
     <div style={{ marginBottom: hasRashi ? '0.75rem' : '0.15rem' }}>
-      <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
+      <p style={{ fontSize, lineHeight: 1.6, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
         {prefix}{row.he}
       </p>
       {hasRashi && <RashiBlock rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
