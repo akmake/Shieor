@@ -1,3 +1,5 @@
+import { getDailyCalendar } from '../services/calendar.js';
+
 const SEFARIA_BASE_URL = 'https://www.sefaria.org';
 const DEFAULT_TIMEZONE = 'Asia/Jerusalem';
 
@@ -63,12 +65,14 @@ function getHebrewOrdinal(n) {
 
 function parseStartChapter(ref) {
   if (!ref) return 1;
+  // Handle "Mishneh Torah, Sabbath.13-15" format (chapter after last dot)
+  const dotMatch = ref.match(/\.(\d+)/);
+  if (dotMatch) return parseInt(dotMatch[1], 10);
+  // Fallback: standalone number in space-separated parts
   const parts = ref.split(' ');
   for (let i = parts.length - 1; i >= 0; i--) {
     const p = parts[i];
-    if (/^\d+(-\d+)?$/.test(p)) {
-      return parseInt(p.split('-')[0], 10);
-    }
+    if (/^\d+(-\d+)?$/.test(p)) return parseInt(p.split('-')[0], 10);
   }
   return 1;
 }
@@ -300,13 +304,61 @@ async function resolveStudy(calendarItems, config, dateString) {
 
   let refsToFetch = [item.ref];
 
-  // חומש מפוצל כדי לא לקרוס
-  if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
+  // שניים מקרא – כל 7 העליות עם כותרות עליות + כותרות פרקים
+  if (config.key === 'shnayimMikra' && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
+    const ALIYOT_NAMES = ['ראשונה', 'שנייה', 'שלישית', 'רביעית', 'חמישית', 'שישית', 'שביעית'];
+    let allSections = [];
+    let globalId = 1;
+    let displayedChapter = null; // הפרק האחרון שהוצג
+
+    for (let i = 0; i < 7; i++) {
+      const r = item.extraDetails.aliyot[i];
+      if (!r) continue;
+
+      // כותרת עלייה
+      allSections.push({ id: String(globalId++), isHeader: true, isAliyahHeader: true, he: `עלייה ${ALIYOT_NAMES[i]}`, en: '', rashi: [] });
+
+      // פרק התחלה של עלייה זו (למשל "Leviticus 2:7-2:16" → 2)
+      const chMatch = r.match(/(\d+):/);
+      const aliyahStartChapter = chMatch ? parseInt(chMatch[1], 10) : null;
+
+      // אם עלייה זו מתחילה בפרק חדש שטרם הוצג – הצג כותרת פרק
+      if (aliyahStartChapter !== null && aliyahStartChapter !== displayedChapter) {
+        displayedChapter = aliyahStartChapter;
+        allSections.push({ id: String(globalId++), isHeader: true, isChapterHeader: true, he: `פרק ${getHebrewOrdinal(displayedChapter)}`, en: '', rashi: [] });
+      }
+
+      try {
+        const payload = await fetchTextByMode(r, config.detailMode);
+        let prevVerse = null;
+        for (const s of payload.sections) {
+          // מעבר פרק בתוך העלייה: verseNum חוזר ל-1
+          if (s.verseNum === 1 && prevVerse !== null && prevVerse > 1) {
+            if (displayedChapter !== null) displayedChapter++;
+            allSections.push({ id: String(globalId++), isHeader: true, isChapterHeader: true, he: `פרק ${getHebrewOrdinal(displayedChapter)}`, en: '', rashi: [] });
+          }
+          allSections.push({ ...s, id: String(globalId++) });
+          if (s.verseNum != null) prevVerse = s.verseNum;
+        }
+      } catch (err) {
+        console.error(`[shnayimMikra] aliyah ${i + 1} failed:`, err.message);
+      }
+    }
+    return {
+      ...config, available: true,
+      label: item?.displayValue?.he || item.ref,
+      ref: item?.ref || '',
+      preview: allSections.find(s => !s.isHeader)?.he?.slice(0, 180) || '',
+      sections: allSections,
+    };
+  }
+
+  // חומש – עלייה לפי יום השבוע
+  if (config.kind === 'aliyah' && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
     const dayOfWeek = new Date(dateString + 'T00:00:00Z').getUTCDay();
     if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
     else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
   }
-  // הרמב"ם לא מפוצל יותר! ספאריה תקבל את הרפרנס בשלמותו כפי שהוכחת!
 
   let allSections = [];
 
@@ -322,7 +374,7 @@ async function resolveStudy(calendarItems, config, dateString) {
     }
   }
 
-  const displayLabel = refsToFetch.length === 1 && refsToFetch[0] !== item.ref ? refsToFetch[0] : (item?.displayValue?.he || item.ref);
+  const displayLabel = item?.displayValue?.he || item.ref;
 
   return {
     ...config,
@@ -341,8 +393,7 @@ export const getDailyStudy = async (req, res, next) => {
 
     console.log(`[study] requested date: "${req.query.date}" → normalized: "${date}"`);
 
-    const calendar = await fetchJson('/api/calendars', { date, timezone: DEFAULT_TIMEZONE });
-    const calendarItems = Array.isArray(calendar?.calendar_items) ? calendar.calendar_items : [];
+    const { items: calendarItems, hebrewDate } = await getDailyCalendar(date);
     const studies = {};
 
     for (const config of Object.values(STUDY_CONFIG)) {
@@ -351,7 +402,7 @@ export const getDailyStudy = async (req, res, next) => {
 
     const rambamLabel = studies.rambam?.label || '–';
     console.log(`[study] response for ${date} | rambam: ${rambamLabel}`);
-    res.json({ date, timezone: DEFAULT_TIMEZONE, hebrewDate: calendar?.date?.hebrew || '', studies });
+    res.json({ date, timezone: DEFAULT_TIMEZONE, hebrewDate, studies });
   } catch (error) {
     next(error);
   }

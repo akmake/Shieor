@@ -1,136 +1,197 @@
 import React from 'react';
 
-const HE_NUMS = ['','א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב','יג','יד','טו','טז','יז','יח','יט','כ','כא','כב','כג','כד','כה','כו','כז','כח','כט','ל','לא','לב','לג','לד','לה','לו','לז','לח','לט','מ','מא','מב','מג','מד','מה','מו','מז','מח','מט','נ','נא','נב','נג','נד','נה','נו','נז','נח','נט','ס'];
-function heNum(n) { return (n >= 1 && n < HE_NUMS.length) ? HE_NUMS[n] : String(n); }
-
-function getSettings() {
-  try {
-    return JSON.parse(localStorage.getItem('shieor-settings') || '{}');
-  } catch (_) {
-    return {};
-  }
-}
-
 const TEAL = '#0d9488';
 
-function RashiBox({ rashi, rowId, rashiFontSize }) {
+const HE_NUMS = [
+  '', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט', 'י',
+  'יא', 'יב', 'יג', 'יד', 'טו', 'טז', 'יז', 'יח', 'יט', 'כ',
+  'כא', 'כב', 'כג', 'כד', 'כה', 'כו', 'כז', 'כח', 'כט', 'ל',
+  'לא', 'לב', 'לג', 'לד', 'לה', 'לו', 'לז', 'לח', 'לט', 'מ',
+  'מא', 'מב', 'מג', 'מד', 'מה', 'מו', 'מז', 'מח', 'מט', 'נ',
+  'נא', 'נב', 'נג', 'נד', 'נה', 'נו', 'נז', 'נח', 'נט', 'ס',
+];
+
+function heNum(n) {
+  return n >= 1 && n < HE_NUMS.length ? HE_NUMS[n] : String(n);
+}
+
+function getSettings() {
+  try { return { fontSize: 20, scrollSpeed: 40, shnayimMikraConnected: true, ...JSON.parse(localStorage.getItem('shieor-settings') || '{}') }; }
+  catch (_) { return { fontSize: 20, scrollSpeed: 40, shnayimMikraConnected: true }; }
+}
+
+// ─── sub-components ──────────────────────────────────────────────────────────
+
+function AliyahHeader({ text }) {
   return (
-    <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] px-4 py-3">
-      <span style={{ fontSize: 11 }} className="font-bold text-[#b58900] mb-2 block tracking-wide">רש״י</span>
-      <div className="space-y-2">
-        {rashi.map((r, rIdx) => (
-          <p key={`${rowId}-rashi-${rIdx}`} style={{ fontSize: rashiFontSize, textAlign: 'justify' }} className="leading-7 text-[var(--ink)] font-rashi m-0">
-            {r.he}
-          </p>
-        ))}
-      </div>
+    <div style={{ textAlign: 'center', padding: '1.75rem 0 0.5rem' }}>
+      <span style={{ color: TEAL, fontSize: '1.3rem', fontWeight: '600', letterSpacing: '0.04em' }} className="font-sbl">
+        {text}
+      </span>
     </div>
   );
 }
 
-function StudyTextRow({ row, isShnayimMikra }) {
-  if (row.isHeader) {
-    return (
-      <div className="mt-10 mb-5 text-center">
-        <h3 style={{ fontFamily: "'BA HaYetzira', sans-serif", color: TEAL, fontSize: '2rem', fontWeight: 'normal' }}>
-          {row.he}
-        </h3>
-      </div>
-    );
-  }
+function ChapterHeader({ text }) {
+  return (
+    <div style={{ textAlign: 'center', padding: '0.75rem 0 0.4rem' }}>
+      <span style={{ color: TEAL, fontSize: '1rem', fontWeight: '400', opacity: 0.8 }} className="font-sbl">
+        {text}
+      </span>
+    </div>
+  );
+}
 
-  const { fontSize = 20 } = getSettings();
-  const rashiFontSize = Math.max(12, fontSize - 4);
-  const hasRashi = row.rashi && row.rashi.length > 0;
-
-  // רמב"ם – drop cap עם float כמו בתמונה
-  if (row.ordinal) {
-    return (
-      <div className="mb-7" style={{ overflow: 'hidden' }}>
-        <p style={{ fontSize, textAlign: 'justify', lineHeight: '2.6rem', margin: 0 }} className="text-[var(--ink)] font-sbl">
-          <span style={{ fontSize: fontSize + 1, fontWeight: '700', color: TEAL, fontFamily: "'BA HaYetzira', sans-serif" }}>
-            {row.ordinal}.{'  '}
-          </span>
-          {row.he}
+function RashiBlock({ rashi, rowId, rashiFontSize }) {
+  return (
+    <div style={{
+      marginTop: '0.35rem',
+      marginBottom: '0.2rem',
+      paddingRight: '0.75rem',
+      borderRight: `2.5px solid ${TEAL}`,
+      opacity: 0.92,
+    }}>
+      <span style={{ fontSize: 11, fontWeight: '700', color: '#b58900', letterSpacing: '0.08em', display: 'block', marginBottom: '0.2rem' }}>
+        רש״י
+      </span>
+      {rashi.map((r, i) => (
+        <p
+          key={`${rowId}-r${i}`}
+          style={{ fontSize: rashiFontSize, lineHeight: 1.75, margin: i < rashi.length - 1 ? '0 0 0.35rem 0' : 0, textAlign: 'justify' }}
+          className="font-sbl text-[var(--ink)]"
+        >
+          {r.he}
         </p>
-        {hasRashi && <RashiBox rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
+      ))}
+    </div>
+  );
+}
+
+// הלכה ברמב"ם
+function HalachaRow({ row, fontSize, rashiFontSize }) {
+  const hasRashi = row.rashi?.length > 0;
+  return (
+    <div style={{ marginBottom: '0.85rem' }}>
+      <p
+        style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }}
+        className="font-sbl text-[var(--ink)]"
+      >
+        <span style={{ fontWeight: '700', color: TEAL, fontSize: fontSize + 1 }}>
+          {row.ordinal}{'\u00A0'}
+        </span>
+        {row.he}
+      </p>
+      {hasRashi && <RashiBlock rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
+    </div>
+  );
+}
+
+// פסוק בחומש / שניים מקרא / תניא
+function VerseRow({ row, fontSize, rashiFontSize, isShnayimMikra, shnayimMikraConnected }) {
+  const hasRashi = row.rashi?.length > 0;
+  const prefix = row.verseNum != null ? `${heNum(row.verseNum)}.\u00A0` : '';
+
+  if (isShnayimMikra) {
+    if (shnayimMikraConnected) {
+      // רצוף: שני פסוקים + תרגום בשורה אחת
+      return (
+        <div style={{ marginBottom: '0.9rem' }}>
+          <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
+            {prefix}{row.he}{' '}
+            {prefix}{row.he}
+            {row.en ? <span style={{ color: 'var(--muted)' }}>{' '}{row.en}</span> : null}
+          </p>
+        </div>
+      );
+    }
+    // מופרד: כל שורה בנפרד
+    return (
+      <div style={{ marginBottom: '0.9rem' }}>
+        <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
+        <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: '0 0 0.1rem 0' }} className="font-sbl text-[var(--ink)]">{prefix}{row.he}</p>
+        {row.en ? <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0, color: 'var(--muted)' }} className="font-sbl">{row.en}</p> : null}
       </div>
     );
   }
 
-  const prefix = row.verseNum != null ? `${heNum(row.verseNum)}.  ` : '';
-
   return (
-    <div className={hasRashi ? 'mb-5' : 'mb-1'}>
-      {isShnayimMikra ? (
-        <>
-          <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
-          <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
-          {row.en ? (
-            <p style={{ fontSize: rashiFontSize, textAlign: 'justify' }} className="mt-1 leading-8 text-[var(--muted)] font-sbl">{row.en}</p>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {row.he ? (
-            <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
-          ) : null}
-          {hasRashi && <RashiBox rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
-        </>
-      )}
+    <div style={{ marginBottom: hasRashi ? '0.75rem' : '0.15rem' }}>
+      <p style={{ fontSize, lineHeight: 1.75, textAlign: 'justify', margin: 0 }} className="font-sbl text-[var(--ink)]">
+        {prefix}{row.he}
+      </p>
+      {hasRashi && <RashiBlock rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
     </div>
   );
 }
+
+// ─── main export ─────────────────────────────────────────────────────────────
 
 export default function StudyReader({ study }) {
+  const { fontSize = 20, shnayimMikraConnected = true } = getSettings();
+  const rashiFontSize = Math.max(14, fontSize - 3);
   const isShnayimMikra = study.key === 'shnayimMikra';
 
   return (
-    <div className="space-y-5">
-      <section className="glass-panel p-5 sm:p-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">{study.kind}</p>
-        <h1 className="mt-2 text-3xl font-semibold text-[var(--ink)] sm:text-4xl">{study.title}</h1>
-        <p className="mt-3 text-[15px] leading-7 text-[var(--muted)]">{study.subtitle}</p>
+    <div className="space-y-4">
 
-        <div className="mt-4 rounded-2xl border border-[var(--line)] bg-white/70 p-4">
-          <p className="text-sm font-semibold text-[var(--ink)]">{study.label}</p>
-          {study.ref ? <p className="mt-1 text-sm text-[var(--muted)]">{study.ref}</p> : null}
+      {/* ── כרטיס מידע ── */}
+      <section className="glass-panel p-5 sm:p-6">
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--muted)', margin: '0 0 0.3rem 0' }}>
+          {study.kind}
+        </p>
+        <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
+          {study.title}
+        </h1>
+        <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--muted)', margin: '0.4rem 0 0 0' }}>
+          {study.subtitle}
+        </p>
+
+        <div style={{ marginTop: '1rem', padding: '0.65rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--line)', background: 'rgba(255,255,255,0.7)' }}>
+          <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', margin: 0 }}>{study.label}</p>
+          {study.ref && study.label !== study.ref
+            ? <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0.2rem 0 0 0' }}>{study.ref}</p>
+            : null}
         </div>
 
         {Array.isArray(study.rules) && study.rules.length > 0 ? (
-          <div className="mt-4 rounded-2xl border border-[var(--line)] bg-[var(--soft)] p-4">
-            <h2 className="text-sm font-semibold text-[var(--ink)]">כללי מסלול</h2>
-            <ul className="mt-2 space-y-2 text-sm leading-7 text-[var(--muted)]">
-              {study.rules.map((rule) => (
-                <li key={rule}>• {rule}</li>
+          <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--line)', background: 'var(--soft)' }}>
+            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', margin: '0 0 0.3rem 0' }}>כללי מסלול</p>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {study.rules.map((rule, i) => (
+                <li key={i} style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--muted)' }}>• {rule}</li>
               ))}
             </ul>
           </div>
         ) : null}
       </section>
 
-      <section className="glass-panel p-5 sm:p-6">
-        <h2 className="text-2xl font-semibold text-[var(--ink)]">תוכן הלימוד של היום</h2>
-        {isShnayimMikra && (
-          <p className="mt-1 text-sm text-[var(--muted)]">כל פסוק מוצג פעמיים בעברית ופעם אחת תרגום אונקלוס.</p>
-        )}
+      {/* ── תוכן הלימוד ── */}
+      <section className="glass-panel p-5 sm:p-7">
+        <h2 style={{ fontFamily: "'BA HaYetzira', sans-serif", fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--ink)', margin: '0 0 1.25rem 0' }}>
+          תוכן הלימוד של היום
+        </h2>
 
         {Array.isArray(study.sections) && study.sections.length > 0 ? (
-          <div className="mt-5">
-            {study.sections.map((row, index) => (
-              <StudyTextRow
-                key={row.id || `${index + 1}`}
-                row={row}
-                isShnayimMikra={isShnayimMikra}
-              />
-            ))}
+          <div>
+            {study.sections.map((row, index) => {
+              if (row.isHeader) {
+                return row.isAliyahHeader
+                  ? <AliyahHeader key={row.id ?? index} text={row.he} />
+                  : <ChapterHeader key={row.id ?? index} text={row.he} />;
+              }
+              if (row.ordinal) {
+                return <HalachaRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} />;
+              }
+              return <VerseRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} isShnayimMikra={isShnayimMikra} shnayimMikraConnected={shnayimMikraConnected} />;
+            })}
           </div>
         ) : (
-          <div className="mt-5 rounded-2xl border border-dashed border-[var(--line)] bg-[var(--soft)] p-5 text-sm text-[var(--muted)]">
-            לא חזר תוכן טקסטואלי עבור היום הזה.
-          </div>
+          <p style={{ fontSize: 14, color: 'var(--muted)', textAlign: 'center', padding: '2rem 0' }}>
+            לא חזר תוכן עבור היום הזה.
+          </p>
         )}
       </section>
+
     </div>
   );
 }

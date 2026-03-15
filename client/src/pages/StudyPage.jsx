@@ -20,7 +20,14 @@ export default function StudyPage({ studyKey }) {
   const scrollIntervalRef = useRef(null);
 
   const date = normalizeDate(searchParams.get('date'));
-  const scrollKey = `shieor-pos-${studyKey}-${date}`;
+  const isShnayimMikra = studyKey === 'shnayimMikra';
+  // שניים מקרא: scroll key לפי ראשון של השבוע כדי לשמור מיקום לאורך כל הפרשה
+  const weekSunday = (() => {
+    const [y, m, d] = date.split('-').map(Number);
+    const dow = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+    return shiftDate(date, -dow);
+  })();
+  const scrollKey = `shieor-pos-${studyKey}-${isShnayimMikra ? weekSunday : date}`;
 
   useEffect(() => {
     let alive = true;
@@ -99,8 +106,8 @@ export default function StudyPage({ studyKey }) {
         <DateNavigator
           date={date}
           hebrewDate={state.data?.hebrewDate}
-          onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
-          onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
+          onPrev={() => setSearchParams({ date: shiftDate(date, isShnayimMikra ? -7 : -1) })}
+          onNext={() => setSearchParams({ date: shiftDate(date, isShnayimMikra ? 7 : 1) })}
         />
       </div>
 

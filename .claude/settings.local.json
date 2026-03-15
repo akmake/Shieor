@@ -14,7 +14,12 @@
       "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-02-15&timezone=Asia/Jerusalem\")",
       "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-05-15&timezone=Asia/Jerusalem\")",
       "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const j=JSON.parse\\(d\\); const items=j.calendar_items||[]; items.forEach\\(i=>console.log\\(i?.title?.en, ''''|'''', i?.displayValue?.he, ''''|'''', i?.ref\\)\\);\")",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "WebFetch(domain:www.hebcal.com)",
+      "WebFetch(domain:www.chabad.org)",
+      "WebFetch(domain:www.torahcalc.com)",
+      "WebFetch(domain:www.sefaria.org.il)",
+      "WebFetch(domain:chabad.org)"
     ]
   }
 }

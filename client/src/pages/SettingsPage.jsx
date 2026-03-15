@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { clearAllDatabases } from '../utils/db';
 
-const DEFAULTS = { fontSize: 20, scrollSpeed: 40 };
+const DEFAULTS = { fontSize: 20, scrollSpeed: 40, shnayimMikraConnected: true };
 
 function loadSettings() {
   try {
@@ -80,6 +80,26 @@ export default function SettingsPage() {
             />
             <span className="text-xs text-[var(--muted)]">מהיר</span>
             <span className="w-10 text-center text-sm font-bold text-[var(--ink)]">{settings.scrollSpeed}</span>
+          </div>
+        </div>
+
+        {/* שניים מקרא */}
+        <div className="glass-panel p-5">
+          <label className="block text-sm font-semibold text-[var(--ink)]">תצוגת שניים מקרא</label>
+          <p className="mt-1 text-xs text-[var(--muted)]">כיצד להציג כל פסוק — רצוף בשורה אחת או מופרד לשורות</p>
+          <div className="mt-3 flex gap-3">
+            <button
+              onClick={() => update('shnayimMikraConnected', true)}
+              className={`flex-1 rounded-xl border py-2 text-sm font-medium transition ${settings.shnayimMikraConnected ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] text-[var(--ink)]'}`}
+            >
+              רצוף
+            </button>
+            <button
+              onClick={() => update('shnayimMikraConnected', false)}
+              className={`flex-1 rounded-xl border py-2 text-sm font-medium transition ${!settings.shnayimMikraConnected ? 'border-[var(--brand)] bg-[var(--brand)] text-white' : 'border-[var(--line)] text-[var(--ink)]'}`}
+            >
+              מופרד
+            </button>
           </div>
         </div>
 
