@@ -19,9 +19,9 @@ export function normalizeDate(value) {
 }
 
 export function shiftDate(dateString, offsetDays) {
-  const parsed = new Date(dateString);
-  parsed.setDate(parsed.getDate() + offsetDays);
-  return normalizeDate(parsed);
+  const [y, m, d] = dateString.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + offsetDays));
+  return dt.toISOString().slice(0, 10);
 }
 
 export function formatDateLabel(dateString) {
@@ -32,7 +32,7 @@ function normalizeText(value) { return String(value || '').trim().toLowerCase();
 
 function stripHtml(html) {
   if (!html) return '';
-  return String(html).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+  return String(html).replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, '').replace(/\u2009/g, '').replace(/\u05C0/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
 }
 
 function flatten(value) {
@@ -130,7 +130,7 @@ async function buildDailyStudyFallback(dateString) {
     if (config.key === 'rambam' && Array.isArray(item.refs) && item.refs.length > 0) {
       refsToFetch = item.refs;
     } else if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
-      const dayOfWeek = new Date(dateString).getDay();
+      const dayOfWeek = new Date(dateString + 'T00:00:00Z').getUTCDay();
       if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
       else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
     }

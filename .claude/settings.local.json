@@ -1,7 +1,20 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:www.sefaria.org)"
+      "WebFetch(domain:www.sefaria.org)",
+      "Bash(xargs basename:*)",
+      "Bash(find /c/Users/yosef/Documents/GitHub/Shieor -type d -not -path */node_modules* -not -path */dist*)",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-03-15&timezone=Asia/Jerusalem\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-03-03&timezone=Asia/Jerusalem\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-03-03\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-02-28\")",
+      "Read(//tmp/**)",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-03-22&timezone=Asia/Jerusalem\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-04-01&timezone=Asia/Jerusalem\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-02-15&timezone=Asia/Jerusalem\")",
+      "Bash(curl -s \"https://www.sefaria.org/api/calendars?date=2026-05-15&timezone=Asia/Jerusalem\")",
+      "Bash(node -e \"const d=require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\); const j=JSON.parse\\(d\\); const items=j.calendar_items||[]; items.forEach\\(i=>console.log\\(i?.title?.en, ''''|'''', i?.displayValue?.he, ''''|'''', i?.ref\\)\\);\")",
+      "Bash(node -e \":*)"
     ]
   }
 }

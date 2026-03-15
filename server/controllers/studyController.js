@@ -91,6 +91,8 @@ function stripHtml(html) {
     .replace(/<[^>]+>/g, '')
     .replace(/&nbsp;/g, ' ')
     .replace(/&thinsp;/g, '')
+    .replace(/\u2009/g, '')
+    .replace(/\u05C0/g, '')
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
@@ -99,18 +101,28 @@ function stripHtml(html) {
     .trim();
 }
 
-async function fetchJson(pathname, searchParams = {}) {
+async function fetchJson(pathname, searchParams = {}, { retries = 2, timeoutMs = 12000 } = {}) {
   const url = new URL(pathname, SEFARIA_BASE_URL);
   Object.entries(searchParams).forEach(([key, value]) => {
     if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, value);
   });
 
-  const response = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Sefaria request failed: ${response.status}`);
-  
-  const data = await response.json();
-  if (data.error) throw new Error(`Sefaria API Error: ${data.error}`);
-  return data;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const response = await fetch(url, { headers: { Accept: 'application/json' }, signal: controller.signal });
+      clearTimeout(timer);
+      if (!response.ok) throw new Error(`Sefaria request failed: ${response.status}`);
+      const data = await response.json();
+      if (data.error) throw new Error(`Sefaria API Error: ${data.error}`);
+      return data;
+    } catch (err) {
+      clearTimeout(timer);
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 800 * (attempt + 1)));
+    }
+  }
 }
 
 function flattenBlocks(value) {
@@ -165,8 +177,8 @@ function parseRambamAndroidStyle(textData) {
           result.push({
             id: String(globalId++),
             isHeader: false,
-            // הצמדת אות ההלכה (א, ב) לתחילת הפסוק כמו אצלך
-            he: `${getHebrewOrdinal(hIndex + 1)}.  ${stripHtml(halakha)}`,
+            ordinal: getHebrewOrdinal(hIndex + 1),
+            he: stripHtml(halakha),
             en: '',
             rashi: []
           });
@@ -180,7 +192,8 @@ function parseRambamAndroidStyle(textData) {
         result.push({
           id: String(globalId++),
           isHeader: false,
-          he: `${getHebrewOrdinal(hIndex + 1)}.  ${stripHtml(halakha)}`,
+          ordinal: getHebrewOrdinal(hIndex + 1),
+          he: stripHtml(halakha),
           en: '',
           rashi: []
         });
@@ -228,19 +241,22 @@ async function fetchTextByMode(ref, mode) {
       const safeOnkelosRef = encodeURI(onkelosRef.replace(/ /g, '_'));
       const torahData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
       const onkelosData = await fetchJson(`/api/texts/${safeOnkelosRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
-      
+
       const torahHe = flattenBlocks(torahData?.he || torahData?.text);
       const onkelosHe = flattenBlocks(onkelosData?.he || onkelosData?.text);
       const len = Math.max(torahHe.length, onkelosHe.length);
       const sections = [];
-      
+      const baseVerseMatch = torahData.ref ? torahData.ref.match(/:(\d+)/) : null;
+      const startVerse = baseVerseMatch ? parseInt(baseVerseMatch[1], 10) : 1;
+
       for (let i = 0; i < len; i += 1) {
         sections.push({
           id: String(i + 1),
           isHeader: false,
           he: stripHtml(torahHe[i] || ''),
           en: stripHtml(onkelosHe[i] || ''),
-          rashi: []
+          rashi: [],
+          verseNum: startVerse + i,
         });
       }
       return { sections: sections.filter((row) => row.he || row.en) };
@@ -286,7 +302,7 @@ async function resolveStudy(calendarItems, config, dateString) {
 
   // חומש מפוצל כדי לא לקרוס
   if ((config.kind === 'aliyah' || config.kind === 'parasha') && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
-    const dayOfWeek = new Date(dateString).getDay();
+    const dayOfWeek = new Date(dateString + 'T00:00:00Z').getUTCDay();
     if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
     else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
   }
@@ -323,6 +339,8 @@ export const getDailyStudy = async (req, res, next) => {
     const date = normalizeDateParam(req.query.date);
     if (!date) return res.status(400).json({ message: 'Invalid date.' });
 
+    console.log(`[study] requested date: "${req.query.date}" → normalized: "${date}"`);
+
     const calendar = await fetchJson('/api/calendars', { date, timezone: DEFAULT_TIMEZONE });
     const calendarItems = Array.isArray(calendar?.calendar_items) ? calendar.calendar_items : [];
     const studies = {};
@@ -331,6 +349,8 @@ export const getDailyStudy = async (req, res, next) => {
       studies[config.key] = await resolveStudy(calendarItems, config, date);
     }
 
+    const rambamLabel = studies.rambam?.label || '–';
+    console.log(`[study] response for ${date} | rambam: ${rambamLabel}`);
     res.json({ date, timezone: DEFAULT_TIMEZONE, hebrewDate: calendar?.date?.hebrew || '', studies });
   } catch (error) {
     next(error);

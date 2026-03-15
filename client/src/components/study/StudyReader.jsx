@@ -1,5 +1,8 @@
 import React from 'react';
 
+const HE_NUMS = ['','א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב','יג','יד','טו','טז','יז','יח','יט','כ','כא','כב','כג','כד','כה','כו','כז','כח','כט','ל','לא','לב','לג','לד','לה','לו','לז','לח','לט','מ','מא','מב','מג','מד','מה','מו','מז','מח','מט','נ','נא','נב','נג','נד','נה','נו','נז','נח','נט','ס'];
+function heNum(n) { return (n >= 1 && n < HE_NUMS.length) ? HE_NUMS[n] : String(n); }
+
 function getSettings() {
   try {
     return JSON.parse(localStorage.getItem('shieor-settings') || '{}');
@@ -8,46 +11,71 @@ function getSettings() {
   }
 }
 
+const TEAL = '#0d9488';
+
+function RashiBox({ rashi, rowId, rashiFontSize }) {
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] px-4 py-3">
+      <span style={{ fontSize: 11 }} className="font-bold text-[#b58900] mb-2 block tracking-wide">רש״י</span>
+      <div className="space-y-2">
+        {rashi.map((r, rIdx) => (
+          <p key={`${rowId}-rashi-${rIdx}`} style={{ fontSize: rashiFontSize, textAlign: 'justify' }} className="leading-7 text-[var(--ink)] font-rashi m-0">
+            {r.he}
+          </p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function StudyTextRow({ row, isShnayimMikra }) {
   if (row.isHeader) {
     return (
-      <div className="mt-8 mb-3 pb-2 border-b-2 border-[var(--line)]">
-        <h3 className="text-lg font-bold text-[var(--ink)]">{row.he}</h3>
+      <div className="mt-10 mb-5 text-center">
+        <h3 style={{ fontFamily: "'BA HaYetzira', sans-serif", color: TEAL, fontSize: '2rem', fontWeight: 'normal' }}>
+          {row.he}
+        </h3>
       </div>
     );
   }
 
   const { fontSize = 20 } = getSettings();
   const rashiFontSize = Math.max(12, fontSize - 4);
+  const hasRashi = row.rashi && row.rashi.length > 0;
+
+  // רמב"ם – drop cap עם float כמו בתמונה
+  if (row.ordinal) {
+    return (
+      <div className="mb-7" style={{ overflow: 'hidden' }}>
+        <p style={{ fontSize, textAlign: 'justify', lineHeight: '2.6rem', margin: 0 }} className="text-[var(--ink)] font-sbl">
+          <span style={{ fontSize: fontSize + 1, fontWeight: '700', color: TEAL, fontFamily: "'BA HaYetzira', sans-serif" }}>
+            {row.ordinal}.{'  '}
+          </span>
+          {row.he}
+        </p>
+        {hasRashi && <RashiBox rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
+      </div>
+    );
+  }
+
+  const prefix = row.verseNum != null ? `${heNum(row.verseNum)}.  ` : '';
 
   return (
-    <div className="mb-6">
+    <div className={hasRashi ? 'mb-5' : 'mb-1'}>
       {isShnayimMikra ? (
         <>
-          <p style={{ fontSize }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
-          <p style={{ fontSize }} className="mt-1 leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
+          <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
+          <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
           {row.en ? (
-            <p style={{ fontSize: rashiFontSize }} className="mt-2 leading-8 text-[var(--muted)] font-sbl">{row.en}</p>
+            <p style={{ fontSize: rashiFontSize, textAlign: 'justify' }} className="mt-1 leading-8 text-[var(--muted)] font-sbl">{row.en}</p>
           ) : null}
         </>
       ) : (
         <>
           {row.he ? (
-            <p style={{ fontSize }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{row.he}</p>
+            <p style={{ fontSize, textAlign: 'justify' }} className="leading-[2.6rem] text-[var(--ink)] font-sbl">{prefix}{row.he}</p>
           ) : null}
-
-          {row.rashi && row.rashi.length > 0 && (
-            <div className="mt-3 rounded-xl border border-[var(--line)] bg-[var(--soft)] px-4 py-3">
-              <span style={{ fontSize: 11 }} className="font-bold text-[#b58900] mb-2 block tracking-wide">רש״י</span>
-              <div className="space-y-2">
-                {row.rashi.map((r, rIdx) => (
-                  <p key={`${row.id}-rashi-${rIdx}`} style={{ fontSize: rashiFontSize }} className="leading-7 text-[var(--ink)] font-rashi">
-                    {r.he}
-                  </p>
-                ))}
-              </div>
-            </div>
-          )}
+          {hasRashi && <RashiBox rashi={row.rashi} rowId={row.id} rashiFontSize={rashiFontSize} />}
         </>
       )}
     </div>

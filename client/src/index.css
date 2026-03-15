@@ -2,21 +2,25 @@
 @tailwind components;
 @tailwind utilities;
 
-font-face {
+@font-face {
   font-family: 'SBL Hebrew';
-  src: url('/fonts/SBL_Hbrw.ttf') format('truetype');
+  src: url('/fonts/SBL Hbrw.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
-font-face {
+@font-face {
   font-family: 'BA HaYetzira';
-  src: url('/fonts/BA_HaYetzira_Regular.otf') format('opentype');
+  src: url('/fonts/BA HaYetzira Matsa.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'BA HaYetzira', sans-serif;
+}
+
 :root {
   font-family: 'Segoe UI Variable Display', 'Segoe UI', Tahoma, Arial, sans-serif;
   --ink: #0f172a;

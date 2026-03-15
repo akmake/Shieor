@@ -1,4 +1,4 @@
-const DB_NAME = 'shieor-db';
+export const DB_NAME = 'shieor-db-v2';
 const DB_VERSION = 1;
 const STORE_NAME = 'daily-study';
 
@@ -34,4 +34,19 @@ export async function getStudyData(date) {
     request.onsuccess = () => resolve(request.result ? request.result.data : null);
     request.onerror = () => reject(request.error);
   });
+}
+
+export function clearAllDatabases() {
+  const names = ['shieor-db', 'shieor-db-v2'];
+  return Promise.all(
+    names.map(
+      (name) =>
+        new Promise((resolve) => {
+          const req = indexedDB.deleteDatabase(name);
+          req.onsuccess = resolve;
+          req.onerror = resolve;
+          req.onblocked = resolve;
+        })
+    )
+  );
 }

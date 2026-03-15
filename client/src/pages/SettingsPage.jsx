@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { clearAllDatabases } from '../utils/db';
 
 const DEFAULTS = { fontSize: 20, scrollSpeed: 40 };
 
@@ -14,14 +15,6 @@ function saveSettings(s) {
   localStorage.setItem('shieor-settings', JSON.stringify(s));
 }
 
-async function clearCache() {
-  return new Promise((resolve) => {
-    const req = indexedDB.deleteDatabase('shieor-db');
-    req.onsuccess = resolve;
-    req.onerror = resolve;
-    req.onblocked = resolve;
-  });
-}
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState(loadSettings);
@@ -34,7 +27,7 @@ export default function SettingsPage() {
   }
 
   async function handleClear() {
-    await clearCache();
+    await clearAllDatabases();
     setCleared(true);
     setTimeout(() => setCleared(false), 3000);
   }
