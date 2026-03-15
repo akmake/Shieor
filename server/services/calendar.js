@@ -41,23 +41,37 @@ export async function getDailyCalendar(dateString) {
   const items = [];
   let hebrewDate = '';
 
-  // ── 1. Rambam 3-chapters from TorahCalc ────────────────────────────────────
+  // ── 1. Rambam 3-chapters: yesterday's last chapter + today's first two ─────
+  // TorahCalc is offset by +1 chapter vs Chabad. Fix: take chapter 3 of D-1
+  // and chapters 1-2 of D, giving exactly the 3 chapters Chabad uses.
   try {
-    const tc = await fetchJson(`${TORAHCALC_BASE}/api/dailylearning?date=${dateString}`);
-    const r3 = tc?.data?.dailyRambam3;
-    if (r3?.url) {
-      const ref = rambamUrlToRef(r3.url);
-      if (ref) {
-        console.log(`[calendar] Rambam ref from TorahCalc: ${ref}`);
+    const [y, m, d] = dateString.split('-').map(Number);
+    const yesterday = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+
+    const [tcToday, tcYest] = await Promise.all([
+      fetchJson(`${TORAHCALC_BASE}/api/dailylearning?date=${dateString}`),
+      fetchJson(`${TORAHCALC_BASE}/api/dailylearning?date=${yesterday}`),
+    ]);
+
+    const r3Today = tcToday?.data?.dailyRambam3;
+    const r3Yest  = tcYest?.data?.dailyRambam3;
+
+    if (r3Today?.url && r3Yest?.url) {
+      const refToday = rambamUrlToRef(r3Today.url); // e.g. "Mishneh Torah, Sabbath.13-15"
+      const refYest  = rambamUrlToRef(r3Yest.url);  // e.g. "Mishneh Torah, Sabbath.10-12"
+
+      if (refToday && refYest) {
+        console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYest}`);
         items.push({
-          title: { en: 'Daily Rambam (3 chapters)', he: r3.hebrewName || 'רמב"ם יומי' },
-          ref,
-          displayValue: { he: r3.hebrewName || ref },
+          title: { en: 'Daily Rambam (3 chapters)', he: r3Today.hebrewName || 'רמב"ם יומי' },
+          ref: refToday,
+          refYesterday: refYest,          // last chapter of this → chapter 1 of our 3
+          displayValue: { he: r3Today.hebrewName || refToday },
         });
       }
     }
   } catch (err) {
-    console.error('[calendar] TorahCalc failed:', err.message);
+    console.error('[calendar] TorahCalc Rambam failed:', err.message);
   }
 
   // ── 2. Parasha (Chumash + Shnayim Mikra) from Hebcal ──────────────────────

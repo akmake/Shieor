@@ -304,6 +304,14 @@ async function resolveStudy(calendarItems, config, dateString) {
 
   let refsToFetch = [item.ref];
 
+  // רמב"ם – יום קודם (פרק 3) + היום (פרקים 1-2) = 3 פרקים נכונים לפי חב"ד
+  if (config.key === 'rambam' && item.refYesterday) {
+    refsToFetch = [
+      { ref: item.refYesterday, slice: 'last1' },
+      { ref: item.ref,          slice: 'first2' },
+    ];
+  }
+
   // שניים מקרא – כל 7 העליות עם כותרות עליות + כותרות פרקים
   if (config.key === 'shnayimMikra' && item.extraDetails && Array.isArray(item.extraDetails.aliyot)) {
     const ALIYOT_NAMES = ['ראשונה', 'שנייה', 'שלישית', 'רביעית', 'חמישית', 'שישית', 'שביעית'];
@@ -362,13 +370,31 @@ async function resolveStudy(calendarItems, config, dateString) {
 
   let allSections = [];
 
-  for (const r of refsToFetch) {
+  for (const rEntry of refsToFetch) {
+    const r     = typeof rEntry === 'string' ? rEntry : rEntry.ref;
+    const slice = typeof rEntry === 'string' ? null    : rEntry.slice;
     if (!r) continue;
     try {
       const payload = await fetchTextByMode(r, config.detailMode);
+      let sections = payload.sections;
+
+      if (slice === 'last1') {
+        // Keep only the last chapter (header + halakhot of chapter 3)
+        const lastHeaderIdx = sections.map((s, i) => s.isHeader && s.isChapterHeader !== false && !s.isAliyahHeader ? i : -1)
+          .filter(i => i >= 0);
+        const cutFrom = lastHeaderIdx.length > 0 ? lastHeaderIdx[lastHeaderIdx.length - 1] : 0;
+        sections = sections.slice(cutFrom);
+      } else if (slice === 'first2') {
+        // Keep only first two chapters (headers + halakhot of chapters 1-2)
+        const headerIndices = sections.map((s, i) => s.isHeader && !s.isAliyahHeader ? i : -1).filter(i => i >= 0);
+        const cutAt = headerIndices.length >= 3 ? headerIndices[2] : sections.length;
+        sections = sections.slice(0, cutAt);
+      }
+
       const startId = allSections.length;
-      const adjustedSections = payload.sections.map((s) => ({ ...s, id: String(startId + parseInt(s.id, 10)) }));
-      allSections = allSections.concat(adjustedSections);
+      allSections = allSections.concat(
+        sections.map((s, i) => ({ ...s, id: String(startId + i + 1) }))
+      );
     } catch (err) {
       console.error(`Failed fetching chunk ${r}:`, err.message);
     }

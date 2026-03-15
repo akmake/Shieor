@@ -77,6 +77,42 @@ async function fetchJson(url, params = {}) {
   return data;
 }
 
+const HE_ORDS = ['','א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב','יג','יד','טו','טז','יז','יח','יט','כ','כא','כב','כג','כד','כה','כו','כז','כח','כט','ל','לא','לב','לג','לד','לה','לו','לז','לח','לט','מ','מא','מב','מג','מד','מה','מו','מז','מח','מט','נ','נא','נב','נג','נד','נה','נו','נז','נח','נט','ס'];
+const heOrd = n => (n >= 1 && n < HE_ORDS.length) ? HE_ORDS[n] : String(n);
+
+function parseStartChapter(ref) {
+  if (!ref) return 1;
+  const dotMatch = ref.match(/\.(\d+)/);
+  if (dotMatch) return parseInt(dotMatch[1], 10);
+  const parts = ref.split(' ');
+  for (let i = parts.length - 1; i >= 0; i--) {
+    const p = parts[i];
+    if (/^\d+(-\d+)?$/.test(p)) return parseInt(p.split('-')[0], 10);
+  }
+  return 1;
+}
+
+function parseRambam(textData) {
+  const heRaw = textData?.he ?? textData?.text;
+  if (!heRaw || !Array.isArray(heRaw)) return [];
+  const startCh = parseStartChapter(textData.ref);
+  const result = [];
+  let gid = 1;
+  if (Array.isArray(heRaw[0])) {
+    heRaw.forEach((chArr, ci) => {
+      result.push({ id: String(gid++), isHeader: true, he: `פרק ${heOrd(startCh + ci)}`, en: '', rashi: [] });
+      chArr.forEach((h, hi) => {
+        if (h && typeof h === 'string') result.push({ id: String(gid++), isHeader: false, ordinal: heOrd(hi + 1), he: stripHtml(h), en: '', rashi: [] });
+      });
+    });
+  } else {
+    heRaw.forEach((h, hi) => {
+      if (h && typeof h === 'string') result.push({ id: String(gid++), isHeader: false, ordinal: heOrd(hi + 1), he: stripHtml(h), en: '', rashi: [] });
+    });
+  }
+  return result;
+}
+
 async function fetchStudyText(ref, detailMode) {
   if (!ref) return { sections: [] };
   const safeRef = encodeURI(ref.replace(/ /g, '_'));
@@ -97,6 +133,9 @@ async function fetchStudyText(ref, detailMode) {
   }
 
   const textData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: detailMode === 'rashi' ? 1 : 0, pad: 0, lang: 'he' });
+
+  if (detailMode === 'rambam') return { sections: parseRambam(textData) };
+
   const baseVerseMatch = textData.ref ? textData.ref.match(/:(\d+)/) : null;
   const startVerse = baseVerseMatch ? parseInt(baseVerseMatch[1], 10) : 1;
   const sections = mapSectionsHebrew(textData, startVerse);
@@ -132,15 +171,23 @@ function rambamUrlToRef(url) {
 async function buildCalendarItems(dateString) {
   const items = [];
 
-  // Rambam from TorahCalc
+  // Rambam from TorahCalc – yesterday's last chapter + today's first two = Chabad alignment
   try {
-    const tc = await fetchJson(`${TORAHCALC_BASE_URL}/api/dailylearning?date=${dateString}`, {});
-    const r3 = tc?.data?.dailyRambam3;
-    if (r3?.url) {
-      const ref = rambamUrlToRef(r3.url);
-      if (ref) items.push({
-        title: { en: 'Daily Rambam (3 chapters)', he: r3.hebrewName || 'רמב"ם יומי' },
-        ref, displayValue: { he: r3.hebrewName || ref },
+    const [y, m, d] = dateString.split('-').map(Number);
+    const yesterday = new Date(Date.UTC(y, m - 1, d - 1)).toISOString().slice(0, 10);
+    const [tcToday, tcYest] = await Promise.all([
+      fetchJson(`${TORAHCALC_BASE_URL}/api/dailylearning?date=${dateString}`, {}),
+      fetchJson(`${TORAHCALC_BASE_URL}/api/dailylearning?date=${yesterday}`, {}),
+    ]);
+    const r3Today = tcToday?.data?.dailyRambam3;
+    const r3Yest  = tcYest?.data?.dailyRambam3;
+    if (r3Today?.url && r3Yest?.url) {
+      const refToday = rambamUrlToRef(r3Today.url);
+      const refYest  = rambamUrlToRef(r3Yest.url);
+      if (refToday && refYest) items.push({
+        title: { en: 'Daily Rambam (3 chapters)', he: r3Today.hebrewName || 'רמב"ם יומי' },
+        ref: refToday, refYesterday: refYest,
+        displayValue: { he: r3Today.hebrewName || refToday },
       });
     }
   } catch (_) {}
@@ -227,14 +274,32 @@ async function buildDailyStudyFallback(dateString) {
       if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
       else refsToFetch = [item.extraDetails.aliyot[dayOfWeek === 6 ? 6 : dayOfWeek]].filter(Boolean);
     }
+    if (config.key === 'rambam' && item.refYesterday) {
+      refsToFetch = [
+        { ref: item.refYesterday, slice: 'last1' },
+        { ref: item.ref,          slice: 'first2' },
+      ];
+    }
 
     let allSections = [];
-    for (const r of refsToFetch) {
+    for (const rEntry of refsToFetch) {
+      const r     = typeof rEntry === 'string' ? rEntry : rEntry.ref;
+      const slice = typeof rEntry === 'string' ? null    : rEntry.slice;
       if (!r) continue;
       try {
-        const payload = await fetchStudyText(r, config.detailMode);
+        const payload = await fetchStudyText(r, config.key === 'rambam' ? 'rambam' : config.detailMode);
+        let sections = payload.sections;
+        if (slice === 'last1') {
+          const headers = sections.map((s, i) => s.isHeader ? i : -1).filter(i => i >= 0);
+          const cut = headers.length > 0 ? headers[headers.length - 1] : 0;
+          sections = sections.slice(cut);
+        } else if (slice === 'first2') {
+          const headers = sections.map((s, i) => s.isHeader ? i : -1).filter(i => i >= 0);
+          const cut = headers.length >= 3 ? headers[2] : sections.length;
+          sections = sections.slice(0, cut);
+        }
         const startId = allSections.length;
-        allSections = allSections.concat(payload.sections.map(s => ({ ...s, id: String(startId + parseInt(s.id, 10)) })));
+        allSections = allSections.concat(sections.map((s, i) => ({ ...s, id: String(startId + i + 1) })));
       } catch (_) {}
     }
 

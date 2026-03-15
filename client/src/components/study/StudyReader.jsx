@@ -132,45 +132,9 @@ export default function StudyReader({ study }) {
   const isShnayimMikra = study.key === 'shnayimMikra';
 
   return (
-    <div className="space-y-4">
-
-      {/* ── כרטיס מידע ── */}
-      <section className="glass-panel p-5 sm:p-6">
-        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.25em', textTransform: 'uppercase', color: 'var(--muted)', margin: '0 0 0.3rem 0' }}>
-          {study.kind}
-        </p>
-        <h1 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--ink)', margin: 0 }}>
-          {study.title}
-        </h1>
-        <p style={{ fontSize: 15, lineHeight: 1.6, color: 'var(--muted)', margin: '0.4rem 0 0 0' }}>
-          {study.subtitle}
-        </p>
-
-        <div style={{ marginTop: '1rem', padding: '0.65rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--line)', background: 'rgba(255,255,255,0.7)' }}>
-          <p style={{ fontWeight: 600, fontSize: 15, color: 'var(--ink)', margin: 0 }}>{study.label}</p>
-          {study.ref && study.label !== study.ref
-            ? <p style={{ fontSize: 13, color: 'var(--muted)', margin: '0.2rem 0 0 0' }}>{study.ref}</p>
-            : null}
-        </div>
-
-        {Array.isArray(study.rules) && study.rules.length > 0 ? (
-          <div style={{ marginTop: '0.75rem', padding: '0.65rem 0.9rem', borderRadius: '0.75rem', border: '1px solid var(--line)', background: 'var(--soft)' }}>
-            <p style={{ fontWeight: 600, fontSize: 13, color: 'var(--ink)', margin: '0 0 0.3rem 0' }}>כללי מסלול</p>
-            <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-              {study.rules.map((rule, i) => (
-                <li key={i} style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--muted)' }}>• {rule}</li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
-      </section>
-
-      {/* ── תוכן הלימוד ── */}
-      <section className="glass-panel p-5 sm:p-7">
-        <h2 style={{ fontFamily: "'BA HaYetzira', sans-serif", fontSize: '1.2rem', fontWeight: 'normal', color: 'var(--ink)', margin: '0 0 1.25rem 0' }}>
-          תוכן הלימוד של היום
-        </h2>
-
+    <div>
+      {/* ── תוכן הלימוד ── ללא כרטיסייה במובייל, כרטיסייה במחשב */}
+      <section className="sm:glass-panel sm:p-7">
         {Array.isArray(study.sections) && study.sections.length > 0 ? (
           <div>
             {study.sections.map((row, index) => {
@@ -191,7 +155,6 @@ export default function StudyReader({ study }) {
           </p>
         )}
       </section>
-
     </div>
   );
 }

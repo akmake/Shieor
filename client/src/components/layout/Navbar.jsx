@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BookOpenText, House, Layers3, Settings, Sparkles, ScrollText, Menu, X } from 'lucide-react';
+import { BookOpenText, Clock, House, Layers3, Settings, Sparkles, ScrollText, Menu, X } from 'lucide-react';
 
 const ITEMS = [
   { to: '/', label: 'בית', icon: House, end: true },
@@ -8,6 +8,7 @@ const ITEMS = [
   { to: '/rambam', label: 'רמב"ם', icon: Layers3 },
   { to: '/tanya', label: 'תניא', icon: Sparkles },
   { to: '/shnayim-mikra', label: 'שניים מקרא', icon: ScrollText },
+  { to: '/zmanim', label: 'זמנים', icon: Clock },
   { to: '/settings', label: 'הגדרות', icon: Settings },
 ];
 
@@ -15,11 +16,28 @@ export default function Navbar() {
   const location = useLocation();
   const currentDate = new URLSearchParams(location.search).get('date');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const lastScrollY = useRef(0);
 
   const closeMenu = () => setIsMobileMenuOpen(false);
 
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (y > lastScrollY.current && y > 80) {
+        setHidden(true);
+        setIsMobileMenuOpen(false);
+      } else {
+        setHidden(false);
+      }
+      lastScrollY.current = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
-    <nav className="fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6">
+    <nav className={`fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
       <div className="mx-auto w-full max-w-6xl rounded-[28px] border border-[var(--line)] bg-white/90 shadow-[0_16px_70px_rgba(15,23,42,0.1)] backdrop-blur-xl transition-all duration-300">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <Link to={currentDate ? `/?date=${currentDate}` : '/'} className="flex items-center gap-3" onClick={closeMenu}>

@@ -19,7 +19,11 @@
       "WebFetch(domain:www.chabad.org)",
       "WebFetch(domain:www.torahcalc.com)",
       "WebFetch(domain:www.sefaria.org.il)",
-      "WebFetch(domain:chabad.org)"
+      "WebFetch(domain:chabad.org)",
+      "Bash(xargs grep:*)",
+      "WebFetch(domain:he.chabad.org)",
+      "Bash(node scripts/buildRambam.js)",
+      "Bash(taskkill /F /IM node.exe)"
     ]
   }
 }
