@@ -47,7 +47,10 @@ body,
 
 body {
   color: var(--ink);
-  background: #fff;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.14), transparent 28%),
+    radial-gradient(circle at left 20%, rgba(14, 165, 233, 0.1), transparent 24%),
+    linear-gradient(180deg, #f7f9fc 0%, #eef2f8 100%);
 }
 
 a {
@@ -60,6 +63,31 @@ a {
   overflow: hidden;
 }
 
+.app-shell::before,
+.app-shell::after {
+  content: '';
+  position: fixed;
+  z-index: 0;
+  border-radius: 999px;
+  filter: blur(58px);
+  pointer-events: none;
+}
+
+.app-shell::before {
+  top: 8rem;
+  left: -7rem;
+  width: 18rem;
+  height: 18rem;
+  background: rgba(59, 130, 246, 0.16);
+}
+
+.app-shell::after {
+  top: 24rem;
+  right: -7rem;
+  width: 21rem;
+  height: 21rem;
+  background: rgba(20, 184, 166, 0.12);
+}
 
 .glass-panel {
   border: 1px solid var(--line);

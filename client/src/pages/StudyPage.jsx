@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Play, Pause } from 'lucide-react';
+import DateNavigator from '../components/study/DateNavigator';
 import StudyReader from '../components/study/StudyReader';
 import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
 
@@ -13,7 +14,7 @@ function getScrollSpeed() {
 }
 
 export default function StudyPage({ studyKey }) {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({ loading: true, error: '', data: null });
   const [autoScroll, setAutoScroll] = useState(false);
   const scrollIntervalRef = useRef(null);
@@ -56,7 +57,7 @@ export default function StudyPage({ studyKey }) {
   useEffect(() => {
     if (state.loading) return;
     const saved = localStorage.getItem(scrollKey);
-    if (saved) setTimeout(() => window.scrollTo({ top: parseInt(saved, 10), behavior: 'instant' }), 400);
+    if (saved) setTimeout(() => window.scrollTo({ top: parseInt(saved, 10), behavior: 'instant' }), 100);
   }, [state.loading, scrollKey]);
 
   // גלילה אוטומטית
@@ -101,7 +102,16 @@ export default function StudyPage({ studyKey }) {
         </button>
       </div>
 
-{state.loading ? <div className="glass-panel mt-4 p-6 text-center text-[var(--muted)]">טוען תוכן...</div> : null}
+      <div className="mt-4">
+        <DateNavigator
+          date={date}
+          hebrewDate={state.data?.hebrewDate}
+          onPrev={() => setSearchParams({ date: shiftDate(date, isShnayimMikra ? -7 : -1) })}
+          onNext={() => setSearchParams({ date: shiftDate(date, isShnayimMikra ? 7 : 1) })}
+        />
+      </div>
+
+      {state.loading ? <div className="glass-panel mt-4 p-6 text-center text-[var(--muted)]">טוען תוכן...</div> : null}
       {!state.loading && state.error ? <div className="glass-panel mt-4 p-6 text-center text-[var(--ink)]">{state.error}</div> : null}
       {!state.loading && !state.error && study ? <div className="mt-4"><StudyReader study={study} /></div> : null}
     </div>
