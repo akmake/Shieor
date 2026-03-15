@@ -1,9 +1,39 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg'], // קבצים סטטיים מהתיקייה public
+      manifest: {
+        name: 'Shieor - לימוד יומי',
+        short_name: 'Shieor',
+        description: 'אפליקציה ללימוד יומי: חומש, רמב"ם, תניא ושניים מקרא',
+        theme_color: '#ffffff',
+        background_color: '#ffffff',
+        display: 'standalone', // גורם לאתר להיראות כמו אפליקציה עצמאית בלי שורת כתובת
+        dir: 'rtl',
+        lang: 'he',
+        icons: [
+          {
+            src: '/pwa-192x192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          },
+          {
+            src: '/pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
