@@ -62,6 +62,17 @@ function rambamUrlToRef(url) {
   }
 }
 
+function buildSefariaCalendarUrl(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  const params = new URLSearchParams({
+    timezone: 'Asia/Jerusalem',
+    year: String(year),
+    month: String(month),
+    day: String(day),
+  });
+  return `${SEFARIA_BASE}/api/calendars?${params.toString()}`;
+}
+
 export async function getDailyCalendar(dateString) {
   const items = [];
   let hebrewDate = '';
@@ -126,8 +137,6 @@ export async function getDailyCalendar(dateString) {
   }
 
   // ── 3. Tanya from Sefaria + daily cache ─────────────────────────────────────
-  // Sefaria's calendar API ignores the date param and always returns today's data.
-  // We cache the result per calendar date. Over time the cache fills in correctly.
   try {
     const cachedRef = tanyaCache.get(dateString);
     if (cachedRef) {
@@ -138,23 +147,17 @@ export async function getDailyCalendar(dateString) {
       });
       console.log(`[calendar] Tanya from cache: ${cachedRef}`);
     } else {
-      const sefaria = await fetchJson(
-        `${SEFARIA_BASE}/api/calendars?timezone=Asia/Jerusalem`
-      );
+      const sefaria = await fetchJson(buildSefariaCalendarUrl(dateString));
       const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
-      const today = new Date().toISOString().slice(0, 10);
       for (const item of calItems) {
         const en = String(item?.title?.en || '').toLowerCase();
         if (en.includes('tanya')) {
-          // Cache this result for today's actual date
-          if (item.ref) { tanyaCache.set(today, item.ref); saveTanyaCache(tanyaCache); }
-          // Only use it if it's for the requested date
-          if (dateString === today) {
-            items.push(item);
-            console.log(`[calendar] Tanya from Sefaria (today): ${item.ref}`);
-          } else {
-            console.log(`[calendar] Tanya: no cache for ${dateString}, skipping`);
+          if (item.ref) {
+            tanyaCache.set(dateString, item.ref);
+            saveTanyaCache(tanyaCache);
           }
+          items.push(item);
+          console.log(`[calendar] Tanya from Sefaria (${dateString}): ${item.ref}`);
           break;
         }
       }

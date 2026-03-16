@@ -168,6 +168,69 @@ function rambamUrlToRef(url) {
   } catch (_) { return null; }
 }
 
+function parseChapterVerseRef(ref) {
+  if (!ref) return null;
+  const match = String(ref).match(/^(.*)\s(\d+):(\d+)$/);
+  if (!match) return null;
+  return { book: match[1], chapter: Number(match[2]), verse: Number(match[3]) };
+}
+
+function buildSefariaCalendarParams(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return {
+    timezone: TIMEZONE,
+    year: String(year),
+    month: String(month),
+    day: String(day),
+  };
+}
+
+async function getTanyaRefForDate(dateString) {
+  const sefaria = await fetchJson(`${SEFARIA_BASE_URL}/api/calendars`, buildSefariaCalendarParams(dateString));
+  const item = (Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [])
+    .find((i) => String(i?.title?.en || '').toLowerCase().includes('tanya'));
+  return item?.ref || null;
+}
+
+async function getChapterLength(book, chapter) {
+  const chapterRef = `${book} ${chapter}`;
+  const safeRef = encodeURI(chapterRef.replace(/ /g, '_'));
+  const textData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+  const he = Array.isArray(textData?.he) ? textData.he : [];
+  return he.length;
+}
+
+async function buildTanyaDailyRangeRef(startRef, dateString) {
+  const start = parseChapterVerseRef(startRef);
+  if (!start) return startRef;
+
+  let nextRef = null;
+  try {
+    nextRef = await getTanyaRefForDate(shiftDate(dateString, 1));
+  } catch (_) {
+    return startRef;
+  }
+
+  const next = parseChapterVerseRef(nextRef);
+  if (!next || next.book !== start.book) return startRef;
+
+  let endChapter = next.chapter;
+  let endVerse = next.verse - 1;
+  if (next.verse <= 1) {
+    endChapter = next.chapter - 1;
+    if (endChapter < start.chapter) return startRef;
+    try {
+      endVerse = await getChapterLength(start.book, endChapter);
+    } catch (_) {
+      return startRef;
+    }
+  }
+
+  if (endChapter < start.chapter || (endChapter === start.chapter && endVerse < start.verse)) return startRef;
+  if (start.chapter === endChapter) return `${start.book} ${start.chapter}:${start.verse}-${endVerse}`;
+  return `${start.book} ${start.chapter}:${start.verse}-${endChapter}:${endVerse}`;
+}
+
 async function buildCalendarItems(dateString) {
   const items = [];
 
@@ -212,7 +275,7 @@ async function buildCalendarItems(dateString) {
 
   // Tanya from Sefaria (best-effort)
   try {
-    const sefaria = await fetchJson(`${SEFARIA_BASE_URL}/api/calendars`, { date: dateString, timezone: TIMEZONE });
+    const sefaria = await fetchJson(`${SEFARIA_BASE_URL}/api/calendars`, buildSefariaCalendarParams(dateString));
     const tanya = (sefaria?.calendar_items || []).find(i => String(i?.title?.en || '').toLowerCase().includes('tanya'));
     if (tanya) items.push(tanya);
   } catch (_) {}
@@ -269,6 +332,12 @@ async function buildDailyStudyFallback(dateString) {
     }
 
     let refsToFetch = [item.ref];
+    let resolvedRef = item?.ref || '';
+    if (config.key === 'tanya' && item.ref) {
+      const rangeRef = await buildTanyaDailyRangeRef(item.ref, date);
+      refsToFetch = [rangeRef];
+      resolvedRef = rangeRef;
+    }
     if (config.kind === 'aliyah' && item.extraDetails?.aliyot) {
       const dayOfWeek = new Date(date + 'T00:00:00Z').getUTCDay();
       if (dayOfWeek === 5) refsToFetch = [item.extraDetails.aliyot[5], item.extraDetails.aliyot[6]].filter(Boolean);
@@ -306,7 +375,7 @@ async function buildDailyStudyFallback(dateString) {
     studies[config.key] = {
       ...config, available: true,
       label: item?.displayValue?.he || item.ref,
-      ref: item?.ref || '', sections: allSections,
+      ref: resolvedRef, sections: allSections,
     };
   }
 

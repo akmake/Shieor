@@ -84,8 +84,88 @@ function normalizeDateParam(value) {
   return parsed.toISOString().slice(0, 10);
 }
 
+function shiftDate(dateString, offsetDays) {
+  const [y, m, d] = dateString.split('-').map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d + offsetDays));
+  return dt.toISOString().slice(0, 10);
+}
+
 function normalizeText(value) {
   return String(value || '').trim().toLowerCase();
+}
+
+function buildSefariaCalendarParams(dateString) {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return {
+    timezone: DEFAULT_TIMEZONE,
+    year: String(year),
+    month: String(month),
+    day: String(day),
+  };
+}
+
+function parseChapterVerseRef(ref) {
+  if (!ref) return null;
+  const match = String(ref).match(/^(.*)\s(\d+):(\d+)$/);
+  if (!match) return null;
+  return {
+    book: match[1],
+    chapter: Number(match[2]),
+    verse: Number(match[3]),
+  };
+}
+
+async function getTanyaRefForDate(dateString) {
+  const sefaria = await fetchJson('/api/calendars', buildSefariaCalendarParams(dateString));
+  const item = (Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [])
+    .find((i) => String(i?.title?.en || '').toLowerCase().includes('tanya'));
+  return item?.ref || null;
+}
+
+async function getChapterLength(book, chapter) {
+  const chapterRef = `${book} ${chapter}`;
+  const safeRef = encodeURI(chapterRef.replace(/ /g, '_'));
+  const textData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+  const he = Array.isArray(textData?.he) ? textData.he : [];
+  return he.length;
+}
+
+async function buildTanyaDailyRangeRef(startRef, dateString) {
+  const start = parseChapterVerseRef(startRef);
+  if (!start) return startRef;
+
+  const nextDate = shiftDate(dateString, 1);
+  let nextRef = null;
+  try {
+    nextRef = await getTanyaRefForDate(nextDate);
+  } catch (_) {
+    return startRef;
+  }
+
+  const next = parseChapterVerseRef(nextRef);
+  if (!next || next.book !== start.book) return startRef;
+
+  let endChapter = next.chapter;
+  let endVerse = next.verse - 1;
+
+  if (next.verse <= 1) {
+    endChapter = next.chapter - 1;
+    if (endChapter < start.chapter) return startRef;
+    try {
+      endVerse = await getChapterLength(start.book, endChapter);
+    } catch (_) {
+      return startRef;
+    }
+  }
+
+  if (endChapter < start.chapter || (endChapter === start.chapter && endVerse < start.verse)) {
+    return startRef;
+  }
+
+  if (start.chapter === endChapter) {
+    return `${start.book} ${start.chapter}:${start.verse}-${endVerse}`;
+  }
+  return `${start.book} ${start.chapter}:${start.verse}-${endChapter}:${endVerse}`;
 }
 
 function stripHtml(html) {
@@ -303,6 +383,13 @@ async function resolveStudy(calendarItems, config, dateString) {
   }
 
   let refsToFetch = [item.ref];
+  let resolvedRef = item.ref;
+
+  if (config.key === 'tanya' && item.ref) {
+    const rangeRef = await buildTanyaDailyRangeRef(item.ref, dateString);
+    refsToFetch = [rangeRef];
+    resolvedRef = rangeRef;
+  }
 
   // רמב"ם – יום קודם (פרק 3) + היום (פרקים 1-2) = 3 פרקים נכונים לפי חב"ד
   if (config.key === 'rambam' && item.refYesterday) {
@@ -406,7 +493,7 @@ async function resolveStudy(calendarItems, config, dateString) {
     ...config,
     available: true,
     label: displayLabel,
-    ref: item?.ref || '',
+    ref: resolvedRef || '',
     preview: allSections.length ? (allSections[0].he || '').slice(0, 180) : '',
     sections: allSections,
   };

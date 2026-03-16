@@ -87,9 +87,9 @@ function HalachaRow({ row, fontSize, rashiFontSize }) {
 }
 
 // פסוק בחומש / שניים מקרא / תניא
-function VerseRow({ row, fontSize, rashiFontSize, isShnayimMikra, shnayimMikraConnected }) {
+function VerseRow({ row, fontSize, rashiFontSize, isShnayimMikra, shnayimMikraConnected, showVersePrefix }) {
   const hasRashi = row.rashi?.length > 0;
-  const prefix = row.verseNum != null ? `${heNum(row.verseNum)}.\u00A0` : '';
+  const prefix = showVersePrefix && row.verseNum != null ? `${heNum(row.verseNum)}.\u00A0` : '';
 
   if (isShnayimMikra) {
     if (shnayimMikraConnected) {
@@ -130,6 +130,7 @@ export default function StudyReader({ study }) {
   const { fontSize = 20, shnayimMikraConnected = true } = getSettings();
   const rashiFontSize = Math.max(14, fontSize - 3);
   const isShnayimMikra = study.key === 'shnayimMikra';
+  const showVersePrefix = study.key !== 'tanya';
 
   return (
     <div>
@@ -146,7 +147,7 @@ export default function StudyReader({ study }) {
               if (row.ordinal) {
                 return <HalachaRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} />;
               }
-              return <VerseRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} isShnayimMikra={isShnayimMikra} shnayimMikraConnected={shnayimMikraConnected} />;
+              return <VerseRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} isShnayimMikra={isShnayimMikra} shnayimMikraConnected={shnayimMikraConnected} showVersePrefix={showVersePrefix} />;
             })}
           </div>
         ) : (
