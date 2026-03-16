@@ -1,6 +1,31 @@
+import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
 const TORAHCALC_BASE = 'https://www.torahcalc.com';
 const HEBCAL_BASE = 'https://www.hebcal.com';
 const SEFARIA_BASE = 'https://www.sefaria.org';
+
+// ── Tanya daily cache (persisted to disk) ───────────────────────────────────
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const TANYA_CACHE_PATH = join(__dirname, '../data/tanya-cache.json');
+
+function loadTanyaCache() {
+  try {
+    if (existsSync(TANYA_CACHE_PATH)) {
+      return new Map(Object.entries(JSON.parse(readFileSync(TANYA_CACHE_PATH, 'utf8'))));
+    }
+  } catch (_) {}
+  return new Map();
+}
+
+function saveTanyaCache(map) {
+  try {
+    writeFileSync(TANYA_CACHE_PATH, JSON.stringify(Object.fromEntries(map), null, 2));
+  } catch (_) {}
+}
+
+const tanyaCache = loadTanyaCache();
 
 async function fetchJson(url, timeoutMs = 10000) {
   const controller = new AbortController();
@@ -100,22 +125,41 @@ export async function getDailyCalendar(dateString) {
     console.error('[calendar] Hebcal failed:', err.message);
   }
 
-  // ── 3. Tanya from Sefaria (best-effort; Sefaria always returns today's data) ─
+  // ── 3. Tanya from Sefaria + daily cache ─────────────────────────────────────
+  // Sefaria's calendar API ignores the date param and always returns today's data.
+  // We cache the result per calendar date. Over time the cache fills in correctly.
   try {
-    const sefaria = await fetchJson(
-      `${SEFARIA_BASE}/api/calendars?date=${dateString}&timezone=Asia/Jerusalem`
-    );
-    const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
-    for (const item of calItems) {
-      const en = String(item?.title?.en || '').toLowerCase();
-      if (en.includes('tanya')) {
-        items.push(item);
-        console.log(`[calendar] Tanya from Sefaria: ${item.ref || item.displayValue?.he}`);
-        break;
+    const cachedRef = tanyaCache.get(dateString);
+    if (cachedRef) {
+      items.push({
+        title: { en: 'Tanya', he: 'תניא יומי' },
+        ref: cachedRef,
+        displayValue: { he: cachedRef },
+      });
+      console.log(`[calendar] Tanya from cache: ${cachedRef}`);
+    } else {
+      const sefaria = await fetchJson(
+        `${SEFARIA_BASE}/api/calendars?timezone=Asia/Jerusalem`
+      );
+      const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
+      const today = new Date().toISOString().slice(0, 10);
+      for (const item of calItems) {
+        const en = String(item?.title?.en || '').toLowerCase();
+        if (en.includes('tanya')) {
+          // Cache this result for today's actual date
+          if (item.ref) { tanyaCache.set(today, item.ref); saveTanyaCache(tanyaCache); }
+          // Only use it if it's for the requested date
+          if (dateString === today) {
+            items.push(item);
+            console.log(`[calendar] Tanya from Sefaria (today): ${item.ref}`);
+          } else {
+            console.log(`[calendar] Tanya: no cache for ${dateString}, skipping`);
+          }
+          break;
+        }
       }
+      if (!hebrewDate && sefaria?.date?.hebrew) hebrewDate = sefaria.date.hebrew;
     }
-    // Use Sefaria's Hebrew date if we don't have one yet
-    if (!hebrewDate && sefaria?.date?.hebrew) hebrewDate = sefaria.date.hebrew;
   } catch (err) {
     console.error('[calendar] Sefaria Tanya fetch failed:', err.message);
   }
