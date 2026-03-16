@@ -68,10 +68,10 @@ function RashiBlock({ rashi, rowId, rashiFontSize }) {
 }
 
 // הלכה ברמב"ם
-function HalachaRow({ row, fontSize, rashiFontSize }) {
+function HalachaRow({ row, fontSize, rashiFontSize, spacing = '0.4rem' }) {
   const hasRashi = row.rashi?.length > 0;
   return (
-    <div style={{ marginBottom: '0.4rem' }}>
+    <div style={{ marginBottom: spacing }}>
       <p
         style={{ fontSize, lineHeight: 1.5, textAlign: 'justify', margin: 0 }}
         className="font-sbl text-[var(--ink)]"
@@ -130,7 +130,9 @@ export default function StudyReader({ study }) {
   const { fontSize = 20, shnayimMikraConnected = true } = getSettings();
   const rashiFontSize = Math.max(14, fontSize - 3);
   const isShnayimMikra = study.key === 'shnayimMikra';
+  const isRambam = study.key === 'rambam' || study.key === 'rambamOne';
   const showVersePrefix = study.key !== 'tanya';
+  const halachaSpacing = isRambam ? '0.75rem' : '0.4rem';
 
   return (
     <div>
@@ -145,7 +147,15 @@ export default function StudyReader({ study }) {
                   : <ChapterHeader key={row.id ?? index} text={row.he} />;
               }
               if (row.ordinal) {
-                return <HalachaRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} />;
+                return (
+                  <HalachaRow
+                    key={row.id ?? index}
+                    row={row}
+                    fontSize={fontSize}
+                    rashiFontSize={rashiFontSize}
+                    spacing={halachaSpacing}
+                  />
+                );
               }
               return <VerseRow key={row.id ?? index} row={row} fontSize={fontSize} rashiFontSize={rashiFontSize} isShnayimMikra={isShnayimMikra} shnayimMikraConnected={shnayimMikraConnected} showVersePrefix={showVersePrefix} />;
             })}

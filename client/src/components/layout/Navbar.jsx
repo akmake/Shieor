@@ -12,7 +12,7 @@ const ITEMS = [
   { to: '/settings', label: 'הגדרות', icon: Settings },
 ];
 
-export default function Navbar() {
+export default function Navbar({ floating = true }) {
   const location = useLocation();
   const currentDate = new URLSearchParams(location.search).get('date');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,6 +22,11 @@ export default function Navbar() {
   const closeMenu = () => setIsMobileMenuOpen(false);
 
   useEffect(() => {
+    if (!floating) {
+      setHidden(false);
+      return;
+    }
+
     const onScroll = () => {
       const y = window.scrollY;
       if (y > lastScrollY.current && y > 80) {
@@ -34,10 +39,16 @@ export default function Navbar() {
     };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [floating]);
 
   return (
-    <nav className={`fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`}>
+    <nav
+      className={
+        floating
+          ? `fixed inset-x-0 top-0 z-50 px-3 pt-3 sm:px-6 transition-transform duration-300 ${hidden ? '-translate-y-full' : 'translate-y-0'}`
+          : 'relative z-20 px-3 pt-3 sm:px-6'
+      }
+    >
       <div className="mx-auto w-full max-w-6xl rounded-[28px] border border-[var(--line)] bg-white/90 shadow-[0_16px_70px_rgba(15,23,42,0.1)] backdrop-blur-xl transition-all duration-300">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <Link to={currentDate ? `/?date=${currentDate}` : '/'} className="flex items-center gap-3" onClick={closeMenu}>
