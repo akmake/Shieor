@@ -113,6 +113,51 @@ function parseRambam(textData) {
   return result;
 }
 
+function mapOnkelosSections(torahData, onkelosData) {
+  const torahRaw = torahData?.he || torahData?.text;
+  const onkelosRaw = onkelosData?.he || onkelosData?.text;
+  const startChapter = Number(torahData?.sections?.[0]) || 1;
+  const startVerse = Number(torahData?.sections?.[1]) || 1;
+  const sections = [];
+
+  if (Array.isArray(torahRaw) && Array.isArray(torahRaw[0])) {
+    let chapter = startChapter;
+    for (let ci = 0; ci < torahRaw.length; ci += 1) {
+      const torahChapter = Array.isArray(torahRaw[ci]) ? torahRaw[ci] : [];
+      const onkelosChapter = Array.isArray(onkelosRaw?.[ci]) ? onkelosRaw[ci] : [];
+      const chapterStartVerse = ci === 0 ? startVerse : 1;
+      const len = Math.max(torahChapter.length, onkelosChapter.length);
+      for (let vi = 0; vi < len; vi += 1) {
+        sections.push({
+          id: String(sections.length + 1),
+          he: stripHtml(torahChapter[vi] || ''),
+          en: stripHtml(onkelosChapter[vi] || ''),
+          rashi: [],
+          verseNum: chapterStartVerse + vi,
+          chapterNum: chapter,
+        });
+      }
+      chapter += 1;
+    }
+    return sections.filter((row) => row.he || row.en);
+  }
+
+  const torahHe = flatten(torahRaw);
+  const onkelosHe = flatten(onkelosRaw);
+  const total = Math.max(torahHe.length, onkelosHe.length);
+  for (let i = 0; i < total; i += 1) {
+    sections.push({
+      id: String(i + 1),
+      he: stripHtml(torahHe[i] || ''),
+      en: stripHtml(onkelosHe[i] || ''),
+      rashi: [],
+      verseNum: startVerse + i,
+      chapterNum: startChapter,
+    });
+  }
+  return sections.filter((row) => row.he || row.en);
+}
+
 async function fetchStudyText(ref, detailMode) {
   if (!ref) return { sections: [] };
   const safeRef = encodeURI(ref.replace(/ /g, '_'));
@@ -123,12 +168,7 @@ async function fetchStudyText(ref, detailMode) {
       const safeOnkelosRef = encodeURI(onkelosRef.replace(/ /g, '_'));
       const torahData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
       const onkelosData = await fetchJson(`/api/texts/${safeOnkelosRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
-      const torahHe = flatten(torahData?.he || torahData?.text);
-      const onkelosHe = flatten(onkelosData?.he || onkelosData?.text);
-      const total = Math.max(torahHe.length, onkelosHe.length);
-      const sections = [];
-      for (let i = 0; i < total; i += 1) sections.push({ id: String(i + 1), he: stripHtml(torahHe[i] || ''), en: stripHtml(onkelosHe[i] || ''), rashi: [], verseNum: i + 1 });
-      return { sections: sections.filter((row) => row.he || row.en) };
+      return { sections: mapOnkelosSections(torahData, onkelosData) };
     } catch (_) {}
   }
 
@@ -318,7 +358,11 @@ async function buildDailyStudyFallback(dateString) {
           const payload = await fetchStudyText(r, config.detailMode);
           let prevVerse = null;
           for (const s of payload.sections) {
-            if (s.verseNum === 1 && prevVerse !== null && prevVerse > 1) {
+            const currentChapter = Number(s.chapterNum) || null;
+            if (currentChapter !== null && currentChapter !== displayedChapter) {
+              displayedChapter = currentChapter;
+              allSections.push({ id: String(globalId++), isHeader: true, isChapterHeader: true, he: `פרק ${heChap(displayedChapter)}`, en: '', rashi: [] });
+            } else if (currentChapter === null && s.verseNum === 1 && prevVerse !== null && prevVerse > 1) {
               if (displayedChapter !== null) displayedChapter++;
               allSections.push({ id: String(globalId++), isHeader: true, isChapterHeader: true, he: `פרק ${heChap(displayedChapter)}`, en: '', rashi: [] });
             }
