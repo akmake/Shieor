@@ -1,19 +1,27 @@
 import api from './api';
 import { saveStudyData, getStudyData } from './db';
 
-export const STUDY_ROUTES = { chumash: '/chumash', rambam: '/rambam', tanya: '/tanya', shnayimMikra: '/shnayim-mikra' };
+export const STUDY_ROUTES = {
+  chumash: '/chumash',
+  rambam: '/rambam',
+  rambamOne: '/rambam-one',
+  tanya: '/tanya',
+  seferHamitzvot: '/sefer-hamitzvot',
+  shnayimMikra: '/shnayim-mikra',
+};
 const SEFARIA_BASE_URL = 'https://www.sefaria.org';
 const TORAHCALC_BASE_URL = 'https://www.torahcalc.com';
 const HEBCAL_BASE_URL = 'https://www.hebcal.com';
 const TIMEZONE = 'Asia/Jerusalem';
 
 const FALLBACK_STUDIES = {
-  chumash: { key: 'chumash', title: 'חומש עם רש"י', subtitle: 'העלייה היומית מתוך פרשת השבוע', accent: 'blue', kind: 'aliyah', matchers: ['daily chumash', 'chumash', 'parashat hashavua'], detailMode: 'rashi' },
-  rambam: { key: 'rambam', title: 'רמב"ם יומי', subtitle: 'שלושה פרקים במשנה תורה', accent: 'emerald', kind: 'chapters', matchers: ['daily rambam (3 chapters)', 'daily rambam'], detailMode: 'plain' },
-  tanya: { key: 'tanya', title: 'תניא יומי', subtitle: 'קטע יומי', accent: 'violet', kind: 'segment', matchers: ['tanya yomi', 'daily tanya', 'tanya'], detailMode: 'plain' },
-  shnayimMikra: { key: 'shnayimMikra', title: 'שניים מקרא', subtitle: 'פרשת השבוע עם תרגום', accent: 'amber', kind: 'parasha', matchers: ['parashat hashavua', 'weekly torah portion'], detailMode: 'onkelos' },
+  chumash: { key: 'chumash', title: '\u05d7\u05d5\u05de\u05e9 \u05e2\u05dd \u05e8\u05e9\"\u05d9', subtitle: '\u05d4\u05e2\u05dc\u05d9\u05d9\u05d4 \u05d4\u05d9\u05d5\u05de\u05d9\u05ea \u05de\u05ea\u05d5\u05da \u05e4\u05e8\u05e9\u05ea \u05d4\u05e9\u05d1\u05d5\u05e2', accent: 'blue', kind: 'aliyah', matchers: ['daily chumash', 'chumash', 'parashat hashavua'], detailMode: 'rashi' },
+  rambam: { key: 'rambam', title: '\u05e8\u05de\u05d1\"\u05dd \u05d9\u05d5\u05de\u05d9', subtitle: '\u05e9\u05dc\u05d5\u05e9\u05d4 \u05e4\u05e8\u05e7\u05d9\u05dd \u05d1\u05de\u05e9\u05e0\u05d4 \u05ea\u05d5\u05e8\u05d4', accent: 'emerald', kind: 'chapters', matchers: ['daily rambam (3 chapters)', 'daily rambam'], detailMode: 'plain' },
+  rambamOne: { key: 'rambamOne', title: '\u05e8\u05de\u05d1\"\u05dd \u05d9\u05d5\u05de\u05d9 (\u05e4\u05e8\u05e7 1)', subtitle: '\u05e4\u05e8\u05e7 \u05d0\u05d7\u05d3 \u05d1\u05de\u05e9\u05e0\u05d4 \u05ea\u05d5\u05e8\u05d4', accent: 'emerald', kind: 'chapter', matchers: ['daily rambam (1 chapter)'], detailMode: 'rambam' },
+  tanya: { key: 'tanya', title: '\u05ea\u05e0\u05d9\u05d0 \u05d9\u05d5\u05de\u05d9', subtitle: '\u05e7\u05d8\u05e2 \u05d9\u05d5\u05de\u05d9', accent: 'violet', kind: 'segment', matchers: ['tanya yomi', 'daily tanya', 'tanya'], detailMode: 'plain' },
+  seferHamitzvot: { key: 'seferHamitzvot', title: '\u05e1\u05e4\u05e8 \u05d4\u05de\u05e6\u05d5\u05d5\u05ea \u05d4\u05d9\u05d5\u05de\u05d9', subtitle: '\u05dc\u05d9\u05de\u05d5\u05d3 \u05d9\u05d5\u05de\u05d9 \u05d1\u05e1\u05e4\u05e8 \u05d4\u05de\u05e6\u05d5\u05d5\u05ea', accent: 'blue', kind: 'mitzvot', matchers: ['daily sefer hamitzvot', 'sefer hamitzvot'], detailMode: 'plain' },
+  shnayimMikra: { key: 'shnayimMikra', title: '\u05e9\u05e0\u05d9\u05d9\u05dd \u05de\u05e7\u05e8\u05d0', subtitle: '\u05e4\u05e8\u05e9\u05ea \u05d4\u05e9\u05d1\u05d5\u05e2 \u05e2\u05dd \u05ea\u05e8\u05d2\u05d5\u05dd', accent: 'amber', kind: 'parasha', matchers: ['parashat hashavua', 'weekly torah portion'], detailMode: 'onkelos' },
 };
-
 export function normalizeDate(value) {
   if (!value) return new Date().toISOString().slice(0, 10);
   const parsed = new Date(value);
@@ -208,6 +216,18 @@ function rambamUrlToRef(url) {
   } catch (_) { return null; }
 }
 
+function seferHamitzvotNameToRef(name) {
+  const match = String(name || '').match(/(Positive|Negative)\s+Commandments?\s+(\d+)(?:-(\d+))?/i);
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  const start = match[2];
+  const end = match[3];
+  const base = type === 'positive'
+    ? 'Sefer HaMitzvot, Positive Commandments'
+    : 'Sefer HaMitzvot, Negative Commandments';
+  return end ? `${base} ${start}-${end}` : `${base} ${start}`;
+}
+
 function parseChapterVerseRef(ref) {
   if (!ref) return null;
   const match = String(ref).match(/^(.*)\s(\d+):(\d+)$/);
@@ -282,8 +302,18 @@ async function buildCalendarItems(dateString) {
       fetchJson(`${TORAHCALC_BASE_URL}/api/dailylearning?date=${dateString}`, {}),
       fetchJson(`${TORAHCALC_BASE_URL}/api/dailylearning?date=${yesterday}`, {}),
     ]);
+    const r1Today = tcToday?.data?.dailyRambam;
     const r3Today = tcToday?.data?.dailyRambam3;
     const r3Yest  = tcYest?.data?.dailyRambam3;
+    const shmToday = tcToday?.data?.dailySeferHamitzvos;
+    if (r1Today?.url) {
+      const ref1 = rambamUrlToRef(r1Today.url);
+      if (ref1) items.push({
+        title: { en: 'Daily Rambam (1 chapter)', he: 'רמב"ם יומי (פרק 1)' },
+        ref: ref1,
+        displayValue: { he: r1Today.hebrewName || ref1 },
+      });
+    }
     if (r3Today?.url && r3Yest?.url) {
       const refToday = rambamUrlToRef(r3Today.url);
       const refYest  = rambamUrlToRef(r3Yest.url);
@@ -291,6 +321,14 @@ async function buildCalendarItems(dateString) {
         title: { en: 'Daily Rambam (3 chapters)', he: r3Today.hebrewName || 'רמב"ם יומי' },
         ref: refToday, refYesterday: refYest,
         displayValue: { he: r3Today.hebrewName || refToday },
+      });
+    }
+    if (shmToday?.name) {
+      const shmRef = seferHamitzvotNameToRef(shmToday.name);
+      if (shmRef) items.push({
+        title: { en: 'Daily Sefer HaMitzvot', he: 'ספר המצוות היומי' },
+        ref: shmRef,
+        displayValue: { he: shmToday.hebrewName || shmToday.name },
       });
     }
   } catch (_) {}

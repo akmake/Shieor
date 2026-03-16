@@ -62,6 +62,18 @@ function rambamUrlToRef(url) {
   }
 }
 
+function seferHamitzvotNameToRef(name) {
+  const match = String(name || '').match(/(Positive|Negative)\s+Commandments?\s+(\d+)(?:-(\d+))?/i);
+  if (!match) return null;
+  const type = match[1].toLowerCase();
+  const start = match[2];
+  const end = match[3];
+  const base = type === 'positive'
+    ? 'Sefer HaMitzvot, Positive Commandments'
+    : 'Sefer HaMitzvot, Negative Commandments';
+  return end ? `${base} ${start}-${end}` : `${base} ${start}`;
+}
+
 function buildSefariaCalendarUrl(dateString) {
   const [year, month, day] = dateString.split('-').map(Number);
   const params = new URLSearchParams({
@@ -89,8 +101,21 @@ export async function getDailyCalendar(dateString) {
       fetchJson(`${TORAHCALC_BASE}/api/dailylearning?date=${yesterday}`),
     ]);
 
+    const r1Today = tcToday?.data?.dailyRambam;
     const r3Today = tcToday?.data?.dailyRambam3;
     const r3Yest  = tcYest?.data?.dailyRambam3;
+    const shmToday = tcToday?.data?.dailySeferHamitzvos;
+
+    if (r1Today?.url) {
+      const ref1 = rambamUrlToRef(r1Today.url);
+      if (ref1) {
+        items.push({
+          title: { en: 'Daily Rambam (1 chapter)', he: 'רמב"ם יומי (פרק 1)' },
+          ref: ref1,
+          displayValue: { he: r1Today.hebrewName || ref1 },
+        });
+      }
+    }
 
     if (r3Today?.url && r3Yest?.url) {
       const refToday = rambamUrlToRef(r3Today.url); // e.g. "Mishneh Torah, Sabbath.13-15"
@@ -103,6 +128,17 @@ export async function getDailyCalendar(dateString) {
           ref: refToday,
           refYesterday: refYest,          // last chapter of this → chapter 1 of our 3
           displayValue: { he: r3Today.hebrewName || refToday },
+        });
+      }
+    }
+
+    if (shmToday?.name) {
+      const shmRef = seferHamitzvotNameToRef(shmToday.name);
+      if (shmRef) {
+        items.push({
+          title: { en: 'Daily Sefer HaMitzvot', he: 'ספר המצוות היומי' },
+          ref: shmRef,
+          displayValue: { he: shmToday.hebrewName || shmToday.name },
         });
       }
     }

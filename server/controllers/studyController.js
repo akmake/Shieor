@@ -29,6 +29,16 @@ const STUDY_CONFIG = {
     detailMode: 'rambam', // שינינו מצב ייעודי לרמב"ם שיתמוך במערך דו-ממדי
     rules: ['מסלול של 3 פרקים ביום.'],
   },
+  rambamOne: {
+    key: 'rambamOne',
+    title: 'רמב"ם יומי (פרק 1)',
+    subtitle: 'פרק אחד במשנה תורה',
+    accent: 'emerald',
+    kind: 'chapter',
+    matchers: ['daily rambam (1 chapter)'],
+    detailMode: 'rambam',
+    rules: ['מסלול של פרק אחד ביום.'],
+  },
   tanya: {
     key: 'tanya',
     title: 'תניא יומי',
@@ -38,6 +48,16 @@ const STUDY_CONFIG = {
     matchers: ['tanya yomi', 'daily tanya', 'tanya'],
     detailMode: 'plain',
     rules: ['חלוקה יומית רציפה לאורך שנה.'],
+  },
+  seferHamitzvot: {
+    key: 'seferHamitzvot',
+    title: 'ספר המצוות היומי',
+    subtitle: 'לימוד יומי בספר המצוות לרמב"ם',
+    accent: 'blue',
+    kind: 'mitzvot',
+    matchers: ['daily sefer hamitzvot', 'sefer hamitzvot'],
+    detailMode: 'plain',
+    rules: ['לימוד יומי של מצוות עשה/לא תעשה לפי המחזור.'],
   },
   shnayimMikra: {
     key: 'shnayimMikra',
