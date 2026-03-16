@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Download } from 'lucide-react';
 import DateNavigator from '../components/study/DateNavigator';
 import StudyCard from '../components/study/StudyCard';
-import { getDailyStudy, downloadMonth, normalizeDate, shiftDate } from '../utils/study';
+import { getDailyStudy, normalizeDate, shiftDate } from '../utils/study';
 
 export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [state, setState] = useState({ loading: true, error: '', data: null });
-  const [dlState, setDlState] = useState({ active: false, current: 0, total: 30, done: false });
 
   const date = normalizeDate(searchParams.get('date'));
 
@@ -29,71 +27,16 @@ export default function HomePage() {
     return () => { alive = false; };
   }, [date]);
 
-  async function handleDownloadMonth() {
-    setDlState({ active: true, current: 0, total: 30, done: false });
-    try {
-      await downloadMonth(date, (current, total) => {
-        setDlState({ active: true, current, total, done: false });
-      });
-      setDlState({ active: false, current: 30, total: 30, done: true });
-      setTimeout(() => setDlState((s) => ({ ...s, done: false })), 3000);
-    } catch (_) {
-      setDlState({ active: false, current: 0, total: 30, done: false });
-    }
-  }
-
   const studies = state.data?.studies ? Object.entries(state.data.studies) : [];
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:px-8">
-      <section className="hero-panel p-6 sm:p-8">
-        <div className="hero-bubble hero-bubble-a" />
-        <div className="hero-bubble hero-bubble-b" />
-        <div className="relative z-10 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[var(--brand)]">Shieor</p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-semibold leading-[1.05] text-[var(--ink)] sm:text-5xl lg:text-6xl">
-              לומדים יומי, בצורה חכמה וברורה.
-            </h1>
-            <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)] sm:text-lg">
-              תאריך אחד שולט בהכל, וכל מסלול מחזיר את התוכן שלו לפי הכללים שלו: חומש עם רש&quot;י,
-              רמב&quot;ם 3 פרקים, תניא יומי ושניים מקרא ואחד תרגום.
-            </p>
-          </div>
-          <div className="glass-panel p-4 sm:p-5">
-            <p className="text-sm font-medium text-[var(--muted)]">מה כבר מחובר</p>
-            <div className="mt-3 space-y-2 text-sm leading-7 text-[var(--ink)]">
-              <p>ניווט קדימה ואחורה בין ימים.</p>
-              <p>תוכן לימוד אמיתי בתוך האתר.</p>
-              <p>תצוגה Mobile-first עם טיפוגרפיה נקייה.</p>
-              <p>שמירה אוטומטית לשימוש אופליין.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <div className="mt-5 flex items-center gap-3 flex-wrap">
-        <div className="flex-1">
-          <DateNavigator
-            date={date}
-            hebrewDate={state.data?.hebrewDate}
-            onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
-            onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
-          />
-        </div>
-
-        <button
-          onClick={handleDownloadMonth}
-          disabled={dlState.active}
-          className="inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--ink)] shadow-sm transition hover:bg-[#f0f4ff] disabled:opacity-60"
-        >
-          <Download size={15} />
-          {dlState.active
-            ? `מוריד ${dlState.current} / ${dlState.total}...`
-            : dlState.done
-            ? '✓ הורד בהצלחה'
-            : 'הורד חודש קדימה'}
-        </button>
+      <div className="mt-5">
+        <DateNavigator
+          date={date}
+          onPrev={() => setSearchParams({ date: shiftDate(date, -1) })}
+          onNext={() => setSearchParams({ date: shiftDate(date, 1) })}
+        />
       </div>
 
       {state.loading ? <div className="glass-panel mt-5 p-6 text-center text-[var(--muted)]">טוען לימודי היום...</div> : null}

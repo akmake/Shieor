@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Download } from 'lucide-react';
 import { clearAllDatabases } from '../utils/db';
+import { downloadMonth, normalizeDate } from '../utils/study';
 
 const DEFAULTS = { fontSize: 20, scrollSpeed: 40, shnayimMikraConnected: true };
 
@@ -19,11 +21,26 @@ function saveSettings(s) {
 export default function SettingsPage() {
   const [settings, setSettings] = useState(loadSettings);
   const [cleared, setCleared] = useState(false);
+  const [dlState, setDlState] = useState({ active: false, current: 0, total: 30, done: false });
 
   function update(key, value) {
     const next = { ...settings, [key]: value };
     setSettings(next);
     saveSettings(next);
+  }
+
+  async function handleDownloadMonth() {
+    const startDate = normalizeDate();
+    setDlState({ active: true, current: 0, total: 30, done: false });
+    try {
+      await downloadMonth(startDate, (current, total) => {
+        setDlState({ active: true, current, total, done: false });
+      });
+      setDlState({ active: false, current: 30, total: 30, done: true });
+      setTimeout(() => setDlState((s) => ({ ...s, done: false })), 3000);
+    } catch (_) {
+      setDlState({ active: false, current: 0, total: 30, done: false });
+    }
   }
 
   async function handleClear() {
@@ -40,6 +57,23 @@ export default function SettingsPage() {
       <p className="mt-2 text-sm text-[var(--muted)]">ההגדרות נשמרות בדפדפן ומיושמות מיד.</p>
 
       <div className="mt-6 space-y-5">
+
+        <div className="glass-panel p-5">
+          <h2 className="text-sm font-semibold text-[var(--ink)]">הורדה לשימוש אופליין</h2>
+          <p className="mt-1 text-xs text-[var(--muted)]">י�?ריד את 30 הימים הקר�?בים מהי�?ם �?סטורג המקומי.</p>
+          <button
+            onClick={handleDownloadMonth}
+            disabled={dlState.active}
+            className="mt-4 inline-flex items-center gap-2 rounded-full border border-[var(--line)] bg-white/80 px-4 py-2.5 text-sm font-medium text-[var(--ink)] shadow-sm transition hover:bg-[#f0f4ff] disabled:opacity-60"
+          >
+            <Download size={15} />
+            {dlState.active
+              ? `מוריד ${dlState.current} / ${dlState.total}...`
+              : dlState.done
+              ? '✓ הורד בהצלחה'
+              : 'הורד חודש קדימה'}
+          </button>
+        </div>
 
         {/* גודל גופן */}
         <div className="glass-panel p-5">
