@@ -114,6 +114,7 @@ function parseRambam(textData) {
       });
     });
   } else {
+    result.push({ id: String(gid++), isHeader: true, he: `פרק ${heOrd(startCh)}`, en: '', rashi: [] });
     heRaw.forEach((h, hi) => {
       if (h && typeof h === 'string') result.push({ id: String(gid++), isHeader: false, ordinal: heOrd(hi + 1), he: stripHtml(h), en: '', rashi: [] });
     });
@@ -216,6 +217,21 @@ function rambamUrlToRef(url) {
   } catch (_) { return null; }
 }
 
+function nameToChapterRefs(name) {
+  if (!name) return [];
+  const rangeMatch = name.match(/^(.+)\s+(\d+)-(\d+)$/);
+  if (rangeMatch) {
+    const book = rangeMatch[1];
+    const start = parseInt(rangeMatch[2], 10);
+    const end   = parseInt(rangeMatch[3], 10);
+    return Array.from({ length: end - start + 1 }, (_, i) => `Mishneh Torah, ${book}.${start + i}`);
+  }
+  return name.split(', ').map(entry => {
+    const m = entry.match(/^(.+)\s+(\d+)$/);
+    return m ? `Mishneh Torah, ${m[1]}.${m[2]}` : null;
+  }).filter(Boolean);
+}
+
 function seferHamitzvotNameToRef(name) {
   const match = String(name || '').match(/(Positive|Negative)\s+Commandments?\s+(\d+)(?:-(\d+))?/i);
   if (!match) return null;
@@ -314,13 +330,21 @@ async function buildCalendarItems(dateString) {
         displayValue: { he: r1Today.hebrewName || ref1 },
       });
     }
-    if (r3Today?.url && r3Yest?.url) {
-      const refToday = rambamUrlToRef(r3Today.url);
-      const refYest  = rambamUrlToRef(r3Yest.url);
-      if (refToday && refYest) items.push({
-        title: { en: 'Daily Rambam (3 chapters)', he: r3Today.hebrewName || 'רמב"ם יומי' },
-        ref: refToday, refYesterday: refYest,
-        displayValue: { he: r3Today.hebrewName || refToday },
+    const yesterdayChapters = nameToChapterRefs(r3Yest?.name);
+    const todayChapters     = nameToChapterRefs(r3Today?.name);
+    if (yesterdayChapters.length > 0 && todayChapters.length >= 2) {
+      const refYesterday = yesterdayChapters[yesterdayChapters.length - 1];
+      const ch1 = todayChapters[0];
+      const ch2 = todayChapters[1];
+      const mCh1 = ch1.match(/^(.*?)\.(\d+)$/);
+      const mCh2 = ch2.match(/^(.*?)\.(\d+)$/);
+      const refToday = (mCh1 && mCh2 && mCh1[1] === mCh2[1])
+        ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}`
+        : ch1;
+      items.push({
+        title: { en: 'Daily Rambam (3 chapters)', he: r3Today?.hebrewName || 'רמב"ם יומי' },
+        ref: refToday, refYesterday,
+        displayValue: { he: r3Today?.hebrewName || refToday },
       });
     }
     if (shmToday?.name) {

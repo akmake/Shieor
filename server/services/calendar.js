@@ -62,6 +62,26 @@ function rambamUrlToRef(url) {
   }
 }
 
+// Parse a TorahCalc "name" field into individual Sefaria chapter refs.
+// "Eruvin 4-6"  → ["Mishneh Torah, Eruvin.4", …, "Mishneh Torah, Eruvin.6"]
+// "Eruvin 7, Eruvin 8, Rest on the Tenth of Tishrei 1"
+//             → ["Mishneh Torah, Eruvin.7", "Mishneh Torah, Eruvin.8",
+//                "Mishneh Torah, Rest on the Tenth of Tishrei.1"]
+function nameToChapterRefs(name) {
+  if (!name) return [];
+  const rangeMatch = name.match(/^(.+)\s+(\d+)-(\d+)$/);
+  if (rangeMatch) {
+    const book = rangeMatch[1];
+    const start = parseInt(rangeMatch[2], 10);
+    const end   = parseInt(rangeMatch[3], 10);
+    return Array.from({ length: end - start + 1 }, (_, i) => `Mishneh Torah, ${book}.${start + i}`);
+  }
+  return name.split(', ').map(entry => {
+    const m = entry.match(/^(.+)\s+(\d+)$/);
+    return m ? `Mishneh Torah, ${m[1]}.${m[2]}` : null;
+  }).filter(Boolean);
+}
+
 function seferHamitzvotNameToRef(name) {
   const match = String(name || '').match(/(Positive|Negative)\s+Commandments?\s+(\d+)(?:-(\d+))?/i);
   if (!match) return null;
@@ -117,19 +137,32 @@ export async function getDailyCalendar(dateString) {
       }
     }
 
-    if (r3Today?.url && r3Yest?.url) {
-      const refToday = rambamUrlToRef(r3Today.url); // e.g. "Mishneh Torah, Sabbath.13-15"
-      const refYest  = rambamUrlToRef(r3Yest.url);  // e.g. "Mishneh Torah, Sabbath.10-12"
+    // TorahCalc is offset +1 vs Chabad. Chabad[D] = [TorahCalc[D-1].ch3, TorahCalc[D].ch1, TorahCalc[D].ch2].
+    // When chapters cross a book boundary TorahCalc omits the URL, so always use the `name` field.
+    const yesterdayChapters = nameToChapterRefs(r3Yest?.name);
+    const todayChapters     = nameToChapterRefs(r3Today?.name);
 
-      if (refToday && refYest) {
-        console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYest}`);
-        items.push({
-          title: { en: 'Daily Rambam (3 chapters)', he: r3Today.hebrewName || 'רמב"ם יומי' },
-          ref: refToday,
-          refYesterday: refYest,          // last chapter of this → chapter 1 of our 3
-          displayValue: { he: r3Today.hebrewName || refToday },
-        });
-      }
+    if (yesterdayChapters.length > 0 && todayChapters.length >= 2) {
+      // Last chapter of yesterday's block → chapter 1 of our 3
+      const refYesterday = yesterdayChapters[yesterdayChapters.length - 1];
+
+      // First two chapters of today's block → chapters 2-3 of our 3.
+      // They are always in the same book (cross-book split always falls on ch3).
+      const ch1 = todayChapters[0];
+      const ch2 = todayChapters[1];
+      const mCh1 = ch1.match(/^(.*?)\.(\d+)$/);
+      const mCh2 = ch2.match(/^(.*?)\.(\d+)$/);
+      const refToday = (mCh1 && mCh2 && mCh1[1] === mCh2[1])
+        ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}`
+        : ch1;
+
+      console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYesterday}`);
+      items.push({
+        title: { en: 'Daily Rambam (3 chapters)', he: r3Today?.hebrewName || 'רמב"ם יומי' },
+        ref: refToday,
+        refYesterday,
+        displayValue: { he: r3Today?.hebrewName || refToday },
+      });
     }
 
     if (shmToday?.name) {

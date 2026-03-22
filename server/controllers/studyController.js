@@ -290,7 +290,14 @@ function parseRambamAndroidStyle(textData) {
       });
     });
   } else {
-    // פרק יחיד (גיבוי)
+    // פרק יחיד — מוסיפים כותרת כדי ש-last1 slice יוכל לחתוך נכון
+    result.push({
+      id: String(globalId++),
+      isHeader: true,
+      he: `פרק ${getHebrewOrdinal(startChapter)}`,
+      en: '',
+      rashi: []
+    });
     heRaw.forEach((halakha, hIndex) => {
       if (halakha && typeof halakha === 'string') {
         result.push({

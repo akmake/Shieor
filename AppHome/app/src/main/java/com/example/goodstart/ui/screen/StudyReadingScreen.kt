@@ -160,7 +160,7 @@ fun StudyReadingScreen(
                             item {
                                 Text(
                                     text = state.subtitle,
-                                    modifier = Modifier.fillMaxWidth().absolutePadding(left = 4.dp, right = 16.dp, bottom = 20.dp),
+                                    modifier = Modifier.fillMaxWidth().absolutePadding(left = 12.dp, right = 16.dp, bottom = 20.dp),
                                     textAlign = TextAlign.Center,
                                     fontSize = 14.sp,
                                     color = Primary.copy(alpha = 0.7f),
@@ -169,8 +169,8 @@ fun StudyReadingScreen(
                             }
                         }
                         items(state.sections) { section ->
-                            // Reduced Left padding to 2dp (even smaller than before for perfect fit), Right 20dp
-                            Box(modifier = Modifier.fillMaxWidth().absolutePadding(left = 2.dp, right = 20.dp)) {
+                            // MODERATE BALANCE: 12dp left, 16dp right. Clean but not cut.
+                            Box(modifier = Modifier.fillMaxWidth().absolutePadding(left = 12.dp, right = 16.dp)) {
                                 SectionRow(section, isShnayim, isTanya, connected, fontSize.intValue)
                             }
                         }
