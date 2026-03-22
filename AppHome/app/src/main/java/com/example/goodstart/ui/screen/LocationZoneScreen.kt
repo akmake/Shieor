@@ -44,7 +44,6 @@ fun LocationZoneScreen(
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    // Check permissions on first composition and after returning from settings
     fun refreshPermissions() {
         val hasFine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
@@ -58,78 +57,72 @@ fun LocationZoneScreen(
         if (state.hasLocationPermission) vm.reregisterAll()
     }
 
-    // Location permission launcher
-    val locationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
+    val backgroundLocationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
     ) { refreshPermissions() }
 
-    // Map state
-    var selectedLatLng by remember { mutableStateOf<LatLng?>(null) }
+    val locationLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        refreshPermissions()
+        val fineGranted = results[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        if (fineGranted && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        }
+    }
+
     var showAddDialog by remember { mutableStateOf(false) }
     var pendingLatLng by remember { mutableStateOf<LatLng?>(null) }
     val cameraState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(31.7683, 35.2137), 9f) // Israel
+        position = CameraPosition.fromLatLngZoom(LatLng(31.7683, 35.2137), 9f)
     }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(BgColor)
-            .statusBarsPadding()
     ) {
-        // ── Toolbar ─────────────────────────────────────────────────────────
-        Surface(shadowElevation = 2.dp, color = CardBg) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
+        Surface(shadowElevation = 0.dp, color = Color(0xFFFDFBF7)) {
+            Column {
+                Spacer(Modifier.statusBarsPadding())
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
+                    }
+                    Text(
+                        "אזורי שקט",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                    Spacer(Modifier.width(48.dp))
                 }
-                Text(
-                    "אזורי שקט",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Primary
-                )
-                Spacer(Modifier.width(48.dp))
             }
         }
 
-        // ── Permission banners ───────────────────────────────────────────────
         if (!state.hasLocationPermission) {
             PermissionBanner(
-                text = "נדרשת הרשאת מיקום לפעולת האזורים",
+                text = "נדרשת הרשאת מיקום תמידית לפעולת האזורים",
                 buttonText = "אפשר"
             ) {
-                locationLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                    )
-                )
+                locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
             }
         }
         if (!state.hasDndPermission) {
             PermissionBanner(
-                text = "נדרשת הרשאת 'אל תפריע' להשתקה אוטומטית",
+                text = "הרשאת 'אל תפריע' חסומה? אפשר אותה בהגדרות המכשיר תחת 'אפשר הגדרות מוגבלות'.",
                 buttonText = "אפשר"
             ) {
                 context.startActivity(Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS))
             }
         }
 
-        // ── Map (60% height) ─────────────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.55f)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().weight(0.55f)) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraState,
@@ -144,57 +137,28 @@ fun LocationZoneScreen(
                         center = center,
                         radius = zone.radiusMeters.toDouble(),
                         strokeColor = if (zone.active) Primary else Color.Gray,
-                        fillColor = if (zone.active)
-                            Primary.copy(alpha = 0.15f)
-                        else Color.Gray.copy(alpha = 0.10f),
+                        fillColor = if (zone.active) Primary.copy(alpha = 0.15f) else Color.Gray.copy(alpha = 0.10f),
                         strokeWidth = 3f
                     )
-                    Marker(
-                        state = MarkerState(position = center),
-                        title = zone.name,
-                        snippet = "${zone.radiusMeters.toInt()} מטר"
-                    )
+                    Marker(state = MarkerState(position = center), title = zone.name)
                 }
-            }
-            // Hint
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 8.dp),
-                shape = RoundedCornerShape(20.dp),
-                color = Color.Black.copy(alpha = 0.6f)
-            ) {
-                Text(
-                    "לחץ לחיצה ארוכה על המפה להוספת אזור",
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-                    fontSize = 12.sp,
-                    color = Color.White
-                )
             }
         }
 
-        // ── Zone list (40% height) ────────────────────────────────────────────
         Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.45f)
-                .navigationBarsPadding(),
-            shadowElevation = 4.dp,
-            color = CardBg,
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+            modifier = Modifier.fillMaxWidth().weight(0.45f).navigationBarsPadding(),
+            color = Color(0xFFFDFBF7),
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            shadowElevation = 8.dp
         ) {
             if (state.zones.isEmpty()) {
                 Box(Modifier.fillMaxSize(), Alignment.Center) {
-                    Text(
-                        "עדיין אין אזורים מוגדרים\nלחץ לחיצה ארוכה על המפה",
-                        textAlign = TextAlign.Center,
-                        color = Muted,
-                        fontSize = 14.sp
-                    )
+                    Text("עדיין אין אזורים מוגדרים.", textAlign = TextAlign.Center, color = Muted, fontSize = 14.sp)
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(vertical = 8.dp)
+                    // ASYMMETRIC PADDING: Reduced Left=8dp, Right=16dp
+                    contentPadding = PaddingValues(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 16.dp)
                 ) {
                     items(state.zones, key = { it.id }) { zone ->
                         ZoneRow(
@@ -202,14 +166,13 @@ fun LocationZoneScreen(
                             onToggle = { vm.toggleZone(zone.id) },
                             onDelete = { vm.removeZone(zone.id) }
                         )
-                        HorizontalDivider(color = LineColor, modifier = Modifier.padding(horizontal = 16.dp))
+                        HorizontalDivider(color = LineColor.copy(alpha = 0.5f), modifier = Modifier.padding(vertical = 4.dp))
                     }
                 }
             }
         }
     }
 
-    // ── Add zone dialog ────────────────────────────────────────────────────
     if (showAddDialog && pendingLatLng != null) {
         AddZoneDialog(
             latLng = pendingLatLng!!,
@@ -224,17 +187,15 @@ fun LocationZoneScreen(
 
 @Composable
 private fun PermissionBanner(text: String, buttonText: String, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Amber.copy(alpha = 0.15f))
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text, fontSize = 13.sp, color = Ink, modifier = Modifier.weight(1f))
-        TextButton(onClick = onClick) {
-            Text(buttonText, color = Primary, fontWeight = FontWeight.Bold)
+    Surface(color = Amber.copy(alpha = 0.1f), modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text, fontSize = 12.sp, color = Ink, modifier = Modifier.weight(1f))
+            Button(onClick = onClick, modifier = Modifier.height(32.dp)) {
+                Text(buttonText, fontSize = 12.sp)
+            }
         }
     }
 }
@@ -242,66 +203,36 @@ private fun PermissionBanner(text: String, buttonText: String, onClick: () -> Un
 @Composable
 private fun ZoneRow(zone: SilentZone, onToggle: () -> Unit, onDelete: () -> Unit) {
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Switch(
-            checked = zone.active,
-            onCheckedChange = { onToggle() },
-            colors = SwitchDefaults.colors(checkedThumbColor = Primary, checkedTrackColor = Primary.copy(alpha = 0.4f))
-        )
-        Spacer(Modifier.width(12.dp))
+        Switch(checked = zone.active, onCheckedChange = { onToggle() })
+        Spacer(Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(zone.name, fontSize = 15.sp, fontWeight = FontWeight.Medium, color = Ink)
-            Text(
-                "${zone.radiusMeters.toInt()} מ' • %.4f, %.4f".format(zone.lat, zone.lng),
-                fontSize = 12.sp, color = Muted
-            )
+            Text(zone.name, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Ink)
+            Text("${zone.radiusMeters.toInt()} מטר", fontSize = 13.sp, color = Muted)
         }
         IconButton(onClick = onDelete) {
-            Icon(Icons.Default.Delete, contentDescription = "מחק", tint = Muted)
+            Icon(Icons.Default.Delete, contentDescription = "מחק", tint = Color.Red.copy(alpha = 0.6f))
         }
     }
 }
 
 @Composable
-private fun AddZoneDialog(
-    latLng: LatLng,
-    onConfirm: (name: String, radius: Float) -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun AddZoneDialog(latLng: LatLng, onConfirm: (name: String, radius: Float) -> Unit, onDismiss: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var radius by remember { mutableFloatStateOf(100f) }
-
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("הוסף אזור שקט", fontWeight = FontWeight.Bold) },
+        title = { Text("הוסף אזור שקט", fontWeight = FontWeight.Bold, color = Primary) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
-                    label = { Text("שם האזור") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text("רדיוס: ${radius.toInt()} מטר", fontSize = 13.sp, color = Muted)
-                Slider(
-                    value = radius,
-                    onValueChange = { radius = it },
-                    valueRange = 50f..500f,
-                    colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
-                )
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("שם האזור") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Slider(value = radius, onValueChange = { radius = it }, valueRange = 50f..500f)
             }
         },
         confirmButton = {
-            Button(
-                onClick = { if (name.isNotBlank()) onConfirm(name.trim(), radius) },
-                colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                enabled = name.isNotBlank()
-            ) { Text("הוסף") }
+            Button(onClick = { if (name.isNotBlank()) onConfirm(name.trim(), radius) }) { Text("הוסף") }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("בטל") }

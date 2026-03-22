@@ -18,9 +18,6 @@ export default function Layout() {
       <main className={`relative z-10 ${isStudyPage ? 'pt-6' : 'pt-24'}`}>
         <Outlet />
       </main>
-      <footer className="relative z-10 px-4 pb-10 pt-3 text-center text-sm text-[var(--muted)]">
-        Shieor · Daily Learning
-      </footer>
     </div>
   );
 }

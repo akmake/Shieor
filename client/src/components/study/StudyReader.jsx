@@ -73,7 +73,7 @@ function HalachaRow({ row, fontSize, rashiFontSize, spacing = '0.4rem' }) {
   return (
     <div style={{ marginBottom: spacing }}>
       <p
-        style={{ fontSize, lineHeight: 1.5, textAlign: 'justify', margin: 0 }}
+        style={{ fontSize, lineHeight: 1.9, textAlign: 'justify', margin: 0 }}
         className="font-sbl text-[var(--ink)]"
       >
         <span style={{ fontWeight: '700', color: TEAL, fontSize: fontSize + 6 }}>
@@ -132,7 +132,7 @@ export default function StudyReader({ study }) {
   const isShnayimMikra = study.key === 'shnayimMikra';
   const isRambam = study.key === 'rambam' || study.key === 'rambamOne';
   const showVersePrefix = study.key !== 'tanya';
-  const halachaSpacing = isRambam ? '0.75rem' : '0.4rem';
+  const halachaSpacing = isRambam ? '1.25rem' : '0.7rem';
 
   return (
     <div>

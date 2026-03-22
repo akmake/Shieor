@@ -60,14 +60,14 @@ export default function DateNavigator({ date, onPrev, onNext }) {
   const displayedDate = formatHebrewCalendarDate(date);
 
   return (
-    <section className="glass-panel flex items-center justify-between gap-3 p-3 sm:p-4">
+    <section className="flex items-center justify-between gap-3 rounded-3xl border border-[var(--line)] bg-white px-4 py-3 shadow-sm">
       <button type="button" className="nav-btn" onClick={onNext} aria-label="היום הבא">
         <ChevronRight size={18} />
       </button>
 
       <div className="text-center">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">Hebrew Date</p>
-        <h2 className="mt-1 text-lg font-semibold text-[var(--ink)] sm:text-xl">{displayedDate}</h2>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--brand)]">תאריך עברי</p>
+        <h2 className="mt-1 text-lg font-semibold text-[var(--ink)] sm:text-xl" style={{ color: 'var(--ink)' }}>{displayedDate}</h2>
       </div>
 
       <button type="button" className="nav-btn" onClick={onPrev} aria-label="היום הקודם">

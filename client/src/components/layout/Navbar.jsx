@@ -49,10 +49,10 @@ export default function Navbar({ floating = true }) {
           : 'relative z-20 px-3 pt-3 sm:px-6'
       }
     >
-      <div className="mx-auto w-full max-w-6xl rounded-[28px] border border-[var(--line)] bg-white/90 shadow-[0_16px_70px_rgba(15,23,42,0.1)] backdrop-blur-xl transition-all duration-300">
+      <div className="mx-auto w-full max-w-6xl rounded-[28px] border border-[var(--line)] bg-white/95 shadow-[0_4px_24px_rgba(13,148,136,0.08)] backdrop-blur-xl transition-all duration-300">
         <div className="flex items-center justify-between gap-3 px-4 py-3">
           <Link to={currentDate ? `/?date=${currentDate}` : '/'} className="flex items-center gap-3" onClick={closeMenu}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--ink)] text-white">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand)] text-white">
               <ScrollText size={17} />
             </div>
             <div>
@@ -70,7 +70,7 @@ export default function Navbar({ floating = true }) {
                 end={Boolean(end)}
                 className={({ isActive }) =>
                   `inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition ${
-                    isActive ? 'bg-[var(--ink)] text-white' : 'text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--ink)]'
+                    isActive ? 'bg-[var(--brand)] text-white' : 'text-[var(--muted)] hover:bg-[rgba(13,148,136,0.08)] hover:text-[var(--brand)]'
                   }`
                 }
               >
@@ -101,7 +101,7 @@ export default function Navbar({ floating = true }) {
                   onClick={closeMenu}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-2xl px-4 py-3 text-base font-medium transition ${
-                      isActive ? 'bg-[var(--ink)] text-white' : 'text-[var(--muted)] hover:bg-gray-100 hover:text-[var(--ink)]'
+                      isActive ? 'bg-[var(--brand)] text-white' : 'text-[var(--muted)] hover:bg-[rgba(13,148,136,0.08)] hover:text-[var(--brand)]'
                     }`
                   }
                 >

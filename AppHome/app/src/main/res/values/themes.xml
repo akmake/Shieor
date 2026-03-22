@@ -18,6 +18,12 @@
         <item name="colorControlHighlight">#14007AFF</item>
     </style>
 
+    <!-- Base theme for Splash and other activities needing NoActionBar explicitly -->
+    <style name="Theme.GoodStart.NoActionBar" parent="Theme.GoodStart">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
     <style name="AppCardView" parent="Widget.MaterialComponents.CardView">
         <item name="cardCornerRadius">16dp</item>
         <item name="cardElevation">0dp</item>

@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -45,23 +46,26 @@ fun SettingsScreen(onBack: () -> Unit) {
             .background(BgColor)
     ) {
         // Toolbar
-        Surface(shadowElevation = 2.dp, color = CardBg) {
-            Row(
-                modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Ink)
+        Surface(shadowElevation = 0.dp, color = Color(0xFFFDFBF7)) {
+            Column {
+                Spacer(Modifier.statusBarsPadding())
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
+                    }
+                    Text(
+                        "הגדרות",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                    Spacer(Modifier.width(48.dp))
                 }
-                Text(
-                    "הגדרות",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Ink
-                )
-                Spacer(Modifier.width(48.dp))
             }
         }
 
@@ -69,10 +73,10 @@ fun SettingsScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                // ASYMMETRIC PADDING: Left=8dp, Right=16dp
+                .padding(start = 16.dp, end = 8.dp, top = 16.dp, bottom = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ── Text size ────────────────────────────────────────────────────
             SettingsCard {
                 SettingLabel("גודל טקסט", "${fontSize}sp")
                 Slider(
@@ -85,13 +89,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                     steps = 6,
                     colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
                 )
-                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                    Text("14", fontSize = 11.sp, color = Muted)
-                    Text("28", fontSize = 11.sp, color = Muted)
-                }
             }
 
-            // ── Scroll speed ────────────────────────────────────────────────
             SettingsCard {
                 SettingLabel("מהירות גלילה", "${scrollSpeed} px/s")
                 Slider(
@@ -104,13 +103,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                     steps = 21,
                     colors = SliderDefaults.colors(thumbColor = Primary, activeTrackColor = Primary)
                 )
-                Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
-                    Text("איטי", fontSize = 11.sp, color = Muted)
-                    Text("מהיר", fontSize = 11.sp, color = Muted)
-                }
             }
 
-            // ── Shnayim Mikra ───────────────────────────────────────────────
             SettingsCard {
                 Text("שניים מקרא ואחד תרגום", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 15.sp)
                 Spacer(Modifier.height(10.dp))
@@ -122,8 +116,8 @@ fun SettingsScreen(onBack: () -> Unit) {
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (shnayimConnected) Ink else LineColor,
-                            contentColor = if (shnayimConnected) CardBg else Muted
+                            containerColor = if (shnayimConnected) Primary else LineColor,
+                            contentColor = if (shnayimConnected) Color.White else Muted
                         )
                     ) { Text("רצוף") }
                     Button(
@@ -133,51 +127,33 @@ fun SettingsScreen(onBack: () -> Unit) {
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!shnayimConnected) Ink else LineColor,
-                            contentColor = if (!shnayimConnected) CardBg else Muted
+                            containerColor = if (!shnayimConnected) Primary else LineColor,
+                            contentColor = if (!shnayimConnected) Color.White else Muted
                         )
                     ) { Text("מופרד") }
                 }
             }
 
-            // ── Download ────────────────────────────────────────────────────
             SettingsCard {
                 Text("הורדה אופליין (30 יום)", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 15.sp)
-                Spacer(Modifier.height(10.dp))
                 if (downloadProgress.isNotEmpty()) {
-                    Text(downloadProgress, fontSize = 13.sp, color = Muted)
-                    Spacer(Modifier.height(8.dp))
+                    Text(downloadProgress, fontSize = 13.sp, color = Muted, modifier = Modifier.padding(top = 8.dp))
                 }
+                Spacer(Modifier.height(10.dp))
                 Button(
                     onClick = {
                         if (!downloading) {
                             downloading = true
                             scope.launch {
-                                downloadDays(context, 30) { progress ->
-                                    downloadProgress = progress
-                                }
+                                downloadDays(context, 30) { progress -> downloadProgress = progress }
                                 downloading = false
                             }
                         }
                     },
                     enabled = !downloading,
+                    modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)
                 ) { Text("הורד 30 ימים") }
-            }
-
-            // ── Cache ───────────────────────────────────────────────────────
-            SettingsCard {
-                Text("ניהול מטמון", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 15.sp)
-                Spacer(Modifier.height(6.dp))
-                Text(cacheInfo, fontSize = 13.sp, color = Muted)
-                Spacer(Modifier.height(10.dp))
-                OutlinedButton(
-                    onClick = {
-                        val deleted = StudyCache.clearAll(context)
-                        cacheInfo = "נמחקו $deleted ימים."
-                    },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary)
-                ) { Text("נקה מטמון") }
             }
         }
     }
@@ -186,11 +162,13 @@ fun SettingsScreen(onBack: () -> Unit) {
 @Composable
 private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
     Surface(
+        modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
-        shadowElevation = 2.dp,
-        color = CardBg
+        shadowElevation = 1.dp,
+        color = Color(0xFFFDFBF7),
+        border = androidx.compose.foundation.BorderStroke(1.dp, LineColor.copy(alpha = 0.5f))
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), content = content)
+        Column(modifier = Modifier.padding(16.dp), content = content)
     }
 }
 
@@ -200,14 +178,9 @@ private fun SettingLabel(label: String, value: String) {
         Text(label, fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 15.sp)
         Text(value, fontSize = 14.sp, color = Primary, fontWeight = FontWeight.Bold)
     }
-    Spacer(Modifier.height(6.dp))
 }
 
-private suspend fun downloadDays(
-    context: Context,
-    total: Int,
-    onProgress: (String) -> Unit
-) {
+private suspend fun downloadDays(context: Context, total: Int, onProgress: (String) -> Unit) {
     val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
     for (i in 0 until total) {
         val cal = Calendar.getInstance()
@@ -220,5 +193,5 @@ private suspend fun downloadDays(
             StudyCache.save(context, date, day)
         } catch (_: Exception) {}
     }
-    onProgress("ההורדה הושלמה — $total ימים שמורים.")
+    onProgress("ההורדה הושלמה.")
 }

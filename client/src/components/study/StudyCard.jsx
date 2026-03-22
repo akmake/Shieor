@@ -2,23 +2,16 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { STUDY_ROUTES } from '../../utils/study';
 
-const ACCENTS = {
-  blue: 'accent-blue',
-  emerald: 'accent-emerald',
-  violet: 'accent-violet',
-  amber: 'accent-amber',
-};
-
 export default function StudyCard({ studyKey, study, date }) {
   return (
-    <Link to={`${STUDY_ROUTES[studyKey]}?date=${date}`} className={`study-card ${ACCENTS[study.accent] || ''}`}>
+    <Link to={`${STUDY_ROUTES[studyKey]}?date=${date}`} className="study-card">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--muted)]">{study.kind}</p>
-          <h3 className="mt-2 text-xl font-semibold text-[var(--ink)]">{study.title}</h3>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[var(--brand)]">{study.kind}</p>
+          <h3 className="mt-2 text-xl font-semibold text-[var(--ink)]" style={{ color: 'var(--ink)' }}>{study.title}</h3>
         </div>
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-[var(--ink)] shadow-sm">
-          <ArrowLeft size={18} />
+        <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[var(--brand)] text-white shadow-sm">
+          <ArrowLeft size={16} />
         </span>
       </div>
 

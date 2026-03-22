@@ -37,26 +37,26 @@ fun ZmanimScreen(
             .background(BgColor)
     ) {
         // ── Toolbar ─────────────────────────────────────────────────────────
-        Surface(shadowElevation = 2.dp, color = CardBg) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(horizontal = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Ink)
+        Surface(shadowElevation = 0.dp, color = Color(0xFFFDFBF7)) {
+            Column {
+                Spacer(Modifier.statusBarsPadding())
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
+                    }
+                    Text(
+                        "זמנים הלכתיים",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Primary
+                    )
+                    Spacer(Modifier.width(48.dp))
                 }
-                Text(
-                    "זמנים הלכתיים",
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Ink
-                )
-                Spacer(Modifier.width(48.dp))
             }
         }
 
@@ -74,7 +74,7 @@ fun ZmanimScreen(
                     modifier = Modifier.weight(1f).height(36.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
-                        containerColor = if (selected) Ink else Color.Transparent,
+                        containerColor = if (selected) Primary else Color.Transparent,
                         contentColor = if (selected) Color.White else Muted
                     ),
                     contentPadding = PaddingValues(horizontal = 4.dp)
@@ -90,35 +90,36 @@ fun ZmanimScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(12.dp),
-            shadowElevation = 1.dp,
-            color = CardBg
+            shadowElevation = 0.dp,
+            color = Color(0xFFFDFBF7),
+            border = androidx.compose.foundation.BorderStroke(1.dp, LineColor.copy(alpha = 0.5f))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 IconButton(onClick = { vm.shiftDate(+1) }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.ChevronRight, contentDescription = "הבא", tint = Ink)
+                    Icon(Icons.Default.ChevronRight, contentDescription = "הבא", tint = Primary)
                 }
                 Text(
                     text = HebrewDate.format(state.date),
-                    fontSize = 17.sp,
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = BaHaYetzira,
-                    color = Ink
+                    color = Primary
                 )
                 IconButton(onClick = { vm.shiftDate(-1) }, modifier = Modifier.size(40.dp)) {
-                    Icon(Icons.Default.ChevronLeft, contentDescription = "הקודם", tint = Ink)
+                    Icon(Icons.Default.ChevronLeft, contentDescription = "הקודם", tint = Primary)
                 }
             }
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(12.dp))
 
-        // ── Zmanim list ──────────────────────────────────────────────────────
+        // ── Zmanim list (CLEAN VERSION) ─────────────────────────────────────
         Box(modifier = Modifier.weight(1f)) {
             when {
                 state.loading -> Box(Modifier.fillMaxSize(), Alignment.Center) {
@@ -127,47 +128,42 @@ fun ZmanimScreen(
                 state.error != null -> Box(Modifier.fillMaxSize(), Alignment.Center) {
                     Text(state.error!!, color = Muted, fontSize = 15.sp, textAlign = TextAlign.Center)
                 }
-                else -> Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(14.dp),
-                    shadowElevation = 2.dp,
-                    color = CardBg
-                ) {
-                    LazyColumn {
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        // ASYMMETRIC PADDING: Left=8dp, Right=16dp
+                        contentPadding = PaddingValues(start = 16.dp, end = 8.dp, bottom = 32.dp)
+                    ) {
                         items(state.zmanim) { zman ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 20.dp, vertical = 14.dp),
+                                    .padding(vertical = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
                                     text = zman.label,
                                     modifier = Modifier.weight(1f),
-                                    fontSize = 16.sp,
-                                    color = Ink
+                                    fontSize = 17.sp,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Text(
                                     text = zman.time,
-                                    fontSize = 16.sp,
-                                    color = Ink,
+                                    fontSize = 18.sp,
+                                    color = Primary,
                                     fontFamily = FontFamily.Monospace,
-                                    fontWeight = FontWeight.Medium
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
-                            if (state.zmanim.last() != zman) {
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    color = LineColor
-                                )
-                            }
+                            HorizontalDivider(
+                                color = LineColor.copy(alpha = 0.3f),
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
             }
         }
-        Spacer(Modifier.height(16.dp))
     }
 }
