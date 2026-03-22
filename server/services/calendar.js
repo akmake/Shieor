@@ -67,6 +67,23 @@ function rambamUrlToRef(url) {
 // "Eruvin 7, Eruvin 8, Rest on the Tenth of Tishrei 1"
 //             → ["Mishneh Torah, Eruvin.7", "Mishneh Torah, Eruvin.8",
 //                "Mishneh Torah, Rest on the Tenth of Tishrei.1"]
+const HE_ORDS = ['','א','ב','ג','ד','ה','ו','ז','ח','ט','י','יא','יב','יג','יד','טו','טז','יז','יח','יט','כ','כא','כב','כג','כד','כה','כו','כז','כח','כט','ל'];
+const heOrd = n => (n >= 1 && n < HE_ORDS.length) ? HE_ORDS[n] : String(n);
+
+// Parse a TorahCalc hebrewName into individual "Book פרק N" strings.
+// "עירובין 4-6"  → ["עירובין פרק ד", "עירובין פרק ה", "עירובין פרק ו"]
+// "עירובין פרק ז, ..."  → split by ", "
+function hebrewChapterEntries(hebrewName) {
+  if (!hebrewName) return [];
+  if (hebrewName.includes(',')) return hebrewName.split(', ');
+  const m = hebrewName.match(/^(.+?)\s+(\d+)-(\d+)$/);
+  if (m) {
+    const book = m[1], start = parseInt(m[2], 10), end = parseInt(m[3], 10);
+    return Array.from({ length: end - start + 1 }, (_, i) => `${book} פרק ${heOrd(start + i)}`);
+  }
+  return [hebrewName];
+}
+
 function nameToChapterRefs(name) {
   if (!name) return [];
   const rangeMatch = name.match(/^(.+)\s+(\d+)-(\d+)$/);
@@ -121,10 +138,15 @@ export async function getDailyCalendar(dateString) {
       fetchJson(`${TORAHCALC_BASE}/api/dailylearning?date=${yesterday}`),
     ]);
 
-    const r1Today = tcToday?.data?.dailyRambam;
-    const r3Today = tcToday?.data?.dailyRambam3;
-    const r3Yest  = tcYest?.data?.dailyRambam3;
+    const r1Today  = tcToday?.data?.dailyRambam;
+    const r3Today  = tcToday?.data?.dailyRambam3;
+    const r3Yest   = tcYest?.data?.dailyRambam3;
     const shmToday = tcToday?.data?.dailySeferHamitzvos;
+
+    console.log('[calendar] TorahCalc raw Rambam JSON:');
+    console.log('  today   r3:', JSON.stringify(r3Today));
+    console.log('  yest    r3:', JSON.stringify(r3Yest));
+    console.log('  today   r1:', JSON.stringify(r1Today));
 
     if (r1Today?.url) {
       const ref1 = rambamUrlToRef(r1Today.url);
@@ -156,12 +178,20 @@ export async function getDailyCalendar(dateString) {
         ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}`
         : ch1;
 
-      console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYesterday}`);
+      // Build Hebrew label from the actual 3 chapters being shown (Chabad alignment).
+      const yesterdayHe = hebrewChapterEntries(r3Yest?.hebrewName);
+      const todayHe     = hebrewChapterEntries(r3Today?.hebrewName);
+      const displayHe   = [
+        yesterdayHe[yesterdayHe.length - 1],
+        ...todayHe.slice(0, 2),
+      ].filter(Boolean).join(', ');
+
+      console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYesterday} | label="${displayHe}"`);
       items.push({
-        title: { en: 'Daily Rambam (3 chapters)', he: r3Today?.hebrewName || 'רמב"ם יומי' },
+        title: { en: 'Daily Rambam (3 chapters)', he: 'רמב"ם יומי' },
         ref: refToday,
         refYesterday,
-        displayValue: { he: r3Today?.hebrewName || refToday },
+        displayValue: { he: displayHe || r3Today?.hebrewName || refToday },
       });
     }
 
