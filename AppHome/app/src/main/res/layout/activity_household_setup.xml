@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_screen_soft"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="20dp"
+        android:paddingTop="44dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/household_setup_title"
+            android:textColor="@color/text_primary"
+            android:textSize="36sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/household_setup_subtitle"
+            android:textColor="@color/text_secondary"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:background="@drawable/bg_auth_group"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/create_household"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="14dp"
+                android:text="@string/share_code_message"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/createHouseholdBtn"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="@string/create_household" />
+
+            <LinearLayout
+                android:id="@+id/codeDisplaySection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/household_code_label"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="14sp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_input_ios"
+                    android:gravity="center"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/householdCodeText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:letterSpacing="0.16"
+                        android:textColor="@color/primary"
+                        android:textSize="32sp" />
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/continueBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/continue_button" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:layout_marginBottom="10dp"
+            android:gravity="center"
+            android:text="@string/or_divider"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_auth_group"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/join_household"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:fontFamily="sans-serif-medium" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/AppTextInputLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:hint="@string/household_code_hint">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/codeInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:inputType="number"
+                    android:maxLength="6"
+                    android:textSize="20sp" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/joinBtn"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:text="@string/join_button"
+                app:strokeColor="@color/primary" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:indeterminateTint="@color/primary"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/errorText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/system_red"
+            android:textSize="14sp"
+            android:visibility="gone" />
+    </LinearLayout>
+</ScrollView>

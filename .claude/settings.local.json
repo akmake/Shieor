@@ -23,7 +23,8 @@
       "Bash(xargs grep:*)",
       "WebFetch(domain:he.chabad.org)",
       "Bash(node scripts/buildRambam.js)",
-      "Bash(taskkill /F /IM node.exe)"
+      "Bash(taskkill /F /IM node.exe)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    app:cardBackgroundColor="@color/surface"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/divider_light"
+    app:strokeWidth="0.5dp">
+
+    <LinearLayout
+        android:id="@+id/zmanRowContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/zmanIcon"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/bg_circle"
+            android:backgroundTint="@color/card_blue_bg"
+            android:gravity="center"
+            android:text="☀️"
+            android:textSize="20sp" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/zmanLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="זמן הלכתי"
+                android:textColor="@color/text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/zmanSublabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="שיטה"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/zmanTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/zmanCountdown"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="עוד מעט"
+                android:textColor="@color/system_orange"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/alarmToggle"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="16dp"
+            android:src="@drawable/ic_notifications_none"
+            android:contentDescription="הפעל התראה"
+            app:tint="@color/text_tertiary" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

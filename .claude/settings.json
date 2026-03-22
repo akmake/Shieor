@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew assembleDebug)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug\")",
+      "Bash(cmd.exe /c \"cd /d c:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\Shieor\\\\AppHome && gradlew.bat assembleDebug 2>&1\")"
+    ]
+  }
+}

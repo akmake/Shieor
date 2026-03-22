@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/shieor_bg">
+
+    <!-- ══ Navbar (matches website top bar) ══════════════════════════════════ -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="6dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:background="@drawable/bg_navbar"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp"
+            android:elevation="4dp">
+
+            <!-- Logo block -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <!-- Dark square with scroll icon -->
+                <FrameLayout
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:background="@drawable/bg_logo_square">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:text="&#x1F4DC;"
+                        android:textSize="16sp" />
+                </FrameLayout>
+
+                <!-- Brand text -->
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginStart="10dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="SHIEOR"
+                        android:textSize="10sp"
+                        android:textColor="@color/shieor_brand"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.24"
+                        android:fontFamily="@font/assistant" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="לימוד יומי"
+                        android:textSize="13sp"
+                        android:textColor="@color/shieor_ink"
+                        android:fontFamily="@font/assistant" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Zmanim (clock) button -->
+            <ImageView
+                android:id="@+id/toolbarZmanimBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_clock"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="זמנים"
+                android:layout_marginEnd="4dp"
+                app:tint="@color/shieor_ink" />
+
+            <!-- Settings button -->
+            <ImageView
+                android:id="@+id/toolbarSettingsBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:padding="8dp"
+                android:src="@drawable/ic_settings"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/settings"
+                app:tint="@color/shieor_ink" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- ══ Scrollable body ══════════════════════════════════════════════════ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="false"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="40dp">
+
+            <!-- ══ Date Navigator — glass-panel p-3 flex items-center justify-between ══ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_glass_panel"
+                android:padding="12dp"
+                android:layout_marginBottom="16dp">
+
+                <!-- Next day — nav-btn: w-12 h-12 (48dp) rounded-full border bg-white -->
+                <ImageButton
+                    android:id="@+id/btnNextDate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_chevron_right"
+                    android:background="@drawable/bg_nav_btn"
+                    android:contentDescription="היום הבא"
+                    app:tint="@color/shieor_ink" />
+
+                <!-- Date text center -->
+                <TextView
+                    android:id="@+id/dateText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textSize="18sp"
+                    android:textColor="@color/shieor_ink"
+                    android:textStyle="bold"
+                    android:fontFamily="@font/ba_hayetzira_regular" />
+
+                <!-- Prev day — nav-btn: w-12 h-12 (48dp) rounded-full border bg-white -->
+                <ImageButton
+                    android:id="@+id/btnPrevDate"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:src="@drawable/ic_chevron_left"
+                    android:background="@drawable/bg_nav_btn"
+                    android:contentDescription="היום הקודם"
+                    app:tint="@color/shieor_ink" />
+            </LinearLayout>
+
+            <!-- Loading state -->
+            <TextView
+                android:id="@+id/loadingText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:gravity="center"
+                android:padding="24dp"
+                android:background="@drawable/bg_glass_panel"
+                android:text="טוען לימודי היום..."
+                android:textColor="@color/shieor_muted"
+                android:fontFamily="@font/assistant"
+                android:textSize="14sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- Error state -->
+            <TextView
+                android:id="@+id/errorText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                android:gravity="center"
+                android:padding="24dp"
+                android:background="@drawable/bg_glass_panel"
+                android:text=""
+                android:textColor="@color/shieor_ink"
+                android:fontFamily="@font/assistant"
+                android:textSize="14sp"
+                android:layout_marginBottom="12dp" />
+
+            <!-- ══ Study cards (populated programmatically) ══════════════════ -->
+            <LinearLayout
+                android:id="@+id/studyCardsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

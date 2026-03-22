@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/background"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            app:expandedTitleMarginBottom="20dp"
+            app:expandedTitleMarginStart="20dp"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+
+            <androidx.appcompat.widget.Toolbar
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                app:layout_collapseMode="pin" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom|start"
+                android:layout_marginStart="20dp"
+                android:layout_marginBottom="16dp"
+                android:fontFamily="sans-serif-black"
+                android:text="הגדרות זמנים"
+                android:textColor="@color/text_primary"
+                android:textSize="34sp" />
+
+        </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginBottom="8dp"
+                android:text="בחר אילו זמנים להציג"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchSunrise"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="זריחה"
+                        android:checked="true" />
+
+                    <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="@color/divider_light" android:layout_marginHorizontal="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchShmaGra"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="סוזק&quot;ש הגר&quot;א"
+                        android:checked="true" />
+
+                    <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="@color/divider_light" android:layout_marginHorizontal="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchShmaMga"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="סוזק&quot;ש מגן אברהם"
+                        android:checked="false" />
+
+                    <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="@color/divider_light" android:layout_marginHorizontal="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchTfilaGra"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="סוף זמן תפילה הגר&quot;א"
+                        android:checked="true" />
+
+                    <View android:layout_width="match_parent" android:layout_height="0.5dp" android:background="@color/divider_light" android:layout_marginHorizontal="8dp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchSunset"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="שקיעה"
+                        android:checked="true" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="הגדרות התראה"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="זמן התראה מראש (בדקות)"
+                        android:textColor="@color/text_primary" />
+
+                    <EditText
+                        android:id="@+id/editAlarmOffset"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:hint="למשל: 5"
+                        android:text="0" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Rambam Auto-Scroll Speed ═══════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="גלילה אוטומטית – רמב&quot;ם"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="מהירות גלילה"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/autoScrollSpeedLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="4"
+                            android:textColor="@color/rambam_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:minWidth="24dp"
+                            android:gravity="end" />
+
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/seekAutoScrollSpeed"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:max="22"
+                        android:progress="6"
+                        android:progressTint="@color/rambam_primary"
+                        android:thumbTint="@color/rambam_primary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="איטי"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="מהיר"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Offline Download ═══════════════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="הורדה לשימוש אופליין"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="מוריד את 30 הימים הקרובים לאחסון מקומי לשימוש ללא חיבור."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/downloadProgressText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        android:textColor="@color/rambam_primary"
+                        android:textSize="13sp"
+                        android:visibility="gone"
+                        android:layout_marginBottom="8dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnDownloadMonth"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:text="הורד חודש קדימה"
+                        android:textSize="14sp"
+                        android:textAllCaps="false"
+                        android:fontFamily="@font/assistant"
+                        app:cornerRadius="20dp"
+                        app:backgroundTint="@color/shieor_ink" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Clear Cache ═══════════════════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="ניקוי נתונים שמורים"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/cacheCountText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="מוחק את כל הלימודים שהורדו. הנתונים יורדו מחדש בגישה הבאה."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnClearCache"
+                        android:layout_width="wrap_content"
+                        android:layout_height="42dp"
+                        android:text="נקה נתונים שמורים"
+                        android:textSize="14sp"
+                        android:textAllCaps="false"
+                        android:fontFamily="@font/assistant"
+                        app:cornerRadius="20dp"
+                        app:backgroundTint="@color/system_red" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Shnayim Mikra Display ══════════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="תצוגת שניים מקרא"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="כיצד להציג כל פסוק — רצוף בשורה אחת או מופרד לשורות"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShnayimConnected"
+                            android:layout_width="0dp"
+                            android:layout_height="42dp"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="רצוף"
+                            android:textAllCaps="false"
+                            android:fontFamily="@font/assistant"
+                            app:cornerRadius="12dp"
+                            app:backgroundTint="@color/shieor_ink" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnShnayimSeparated"
+                            android:layout_width="0dp"
+                            android:layout_height="42dp"
+                            android:layout_weight="1"
+                            android:text="מופרד"
+                            android:textAllCaps="false"
+                            android:fontFamily="@font/assistant"
+                            app:cornerRadius="12dp"
+                            app:backgroundTint="@color/divider" />
+
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Rambam Text Size ════════════════════════════════════════ -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="8dp"
+                android:text="גודל טקסט – רמב&quot;ם"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/surface"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="גודל טקסט"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/textSizeLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="20"
+                            android:textColor="@color/rambam_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold"
+                            android:minWidth="32dp"
+                            android:gravity="end" />
+
+                    </LinearLayout>
+
+                    <SeekBar
+                        android:id="@+id/seekTextSize"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:max="7"
+                        android:progress="3"
+                        android:progressTint="@color/rambam_primary"
+                        android:thumbTint="@color/rambam_primary" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="4dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="קטן"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="גדול"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
+

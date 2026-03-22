@@ -1,0 +1,31 @@
+{
+  "media": [
+    {
+      "sort": 1,
+      "title": "Rambam: Terumot, Chapter 12",
+      "teacher-id": 13568,
+      "teacher-name": "Josh Gordon",
+      "teacher-image": "https://w2.chabad.org/media/images/936/cnVR9366947.jpg",
+      "duration": "33:10",
+      "audio-streaming-url": "https://hls-vod-cdn.chabad.org/vod/_definst_/mp3:media_root1/audio/jgordon/rambam/7289548_Rambam_387_Terumot_12.mp3/playlist.m3u8"
+    },
+    {
+      "sort": 2,
+      "title": "Rambam: Terumot, Chapter 12",
+      "teacher-id": 20375,
+      "teacher-name": "Avraham Zajac",
+      "teacher-image": "https://w2.chabad.org/media/images/1132/wcRd11327257.jpg",
+      "duration": "32:02",
+      "audio-streaming-url": "https://hls-vod-cdn.chabad.org/vod/_definst_/mp3:media_root1/audio/avraham_zajac/rambam-ch1/12283500_Zajac_Rambam_1ch_0387_Terumot_ch_12.mp3/playlist.m3u8"
+    },
+    {
+      "title": "Rambam: Terumot, Chapter 12",
+      "teacher-id": 31886,
+      "teacher-name": "Levi Rapoport",
+      "teacher-image": "https://w2.chabad.org/media/images/1270/wstR12705484.jpg",
+      "duration": "47:35",
+      "audio-streaming-url": "https://hls-vod-cdn.chabad.org/vod/_definst_/mp3:media_root1/audio/Levi_Rapoport/Rambam/12418730_LR_Rambam_0387_Terumot_ch_12.mp3/playlist.m3u8"
+    }
+  ],
+  "article-id": 7131
+}

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background">
+
+    <!-- Messages List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/messagesRecycler"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="@dimen/spacing_md"
+        android:clipToPadding="false" />
+
+    <!-- Empty State -->
+    <TextView
+        android:id="@+id/emptyText"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:text="@string/no_messages"
+        android:textSize="@dimen/text_body"
+        android:textColor="@color/text_secondary"
+        android:lineSpacingExtra="4dp"
+        android:visibility="gone" />
+
+    <!-- Premium Input Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_sm"
+        android:paddingStart="@dimen/spacing_md"
+        android:gravity="center_vertical"
+        android:background="@color/surface"
+        android:elevation="8dp">
+
+        <EditText
+            android:id="@+id/messageInput"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:hint="@string/message_hint"
+            android:background="@drawable/bg_edittext"
+            android:paddingStart="@dimen/spacing_md"
+            android:paddingEnd="@dimen/spacing_md"
+            android:textSize="@dimen/text_body"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_hint"
+            android:inputType="textMultiLine"
+            android:maxLines="4"
+            android:layout_marginEnd="@dimen/spacing_sm" />
+
+        <ImageView
+            android:id="@+id/sendButton"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:padding="12dp"
+            android:src="@drawable/ic_send"
+            android:background="@drawable/bg_send_button"
+            android:contentDescription="@string/send_button"
+            app:tint="@color/white"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
+    </LinearLayout>
+</LinearLayout>

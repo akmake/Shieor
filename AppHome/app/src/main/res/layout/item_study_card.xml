@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/studyCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="8dp"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@android:color/white"
+    app:cardCornerRadius="14dp"
+    app:cardElevation="2dp"
+    app:strokeColor="@color/shieor_line"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="14dp">
+
+        <!-- Colored accent dot (right side in RTL) -->
+        <View
+            android:id="@+id/accentBlob"
+            android:layout_width="10dp"
+            android:layout_height="10dp"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Title + label -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <!-- Hidden — keep ID for compatibility -->
+            <TextView
+                android:id="@+id/studyKind"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/studyTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="@color/shieor_ink"
+                android:textStyle="bold"
+                android:fontFamily="@font/ba_hayetzira_regular"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <TextView
+                android:id="@+id/studyLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="12sp"
+                android:textColor="@color/shieor_muted"
+                android:fontFamily="@font/assistant"
+                android:layout_marginTop="2dp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <!-- Hidden — keep IDs for compatibility -->
+            <TextView
+                android:id="@+id/studyRef"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/studyPreview"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Arrow -->
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_chevron_left"
+            android:alpha="0.4"
+            app:tint="@color/shieor_ink" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

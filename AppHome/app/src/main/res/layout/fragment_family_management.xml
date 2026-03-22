@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Profile Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/divider_light"
+            app:strokeWidth="0.5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:padding="28dp">
+
+                <!-- Avatar -->
+                <FrameLayout
+                    android:layout_width="80dp"
+                    android:layout_height="80dp">
+
+                    <TextView
+                        android:id="@+id/userInitialText"
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:background="@drawable/bg_avatar"
+                        android:textColor="@color/white"
+                        android:textSize="32sp"
+                        android:textStyle="bold"
+                        android:gravity="center"
+                        android:text="?" />
+
+                    <View
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_gravity="bottom|end"
+                        android:background="@drawable/bg_online_indicator" />
+                </FrameLayout>
+
+                <TextView
+                    android:id="@+id/userNameText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_primary"
+                    android:layout_marginTop="12dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/online"
+                    android:textSize="13sp"
+                    android:textColor="@color/online_indicator"
+                    android:layout_marginTop="4dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Household Code Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/divider_light"
+            app:strokeWidth="0.5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/household_code"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/family_code_desc"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Code Display -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:background="@drawable/bg_code_display"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/householdCodeText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="------"
+                        android:textSize="28sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        android:letterSpacing="0.2"
+                        android:gravity="center" />
+                </LinearLayout>
+
+                <!-- Action Buttons -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:id="@+id/copyCodeBtn">
+
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:background="@drawable/bg_tab_unselected"
+                            android:src="@drawable/ic_copy"
+                            app:tint="@color/primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/copy_code"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:id="@+id/shareCodeBtn">
+
+                        <ImageView
+                            android:layout_width="36dp"
+                            android:layout_height="36dp"
+                            android:padding="8dp"
+                            android:background="@drawable/bg_tab_unselected"
+                            android:src="@drawable/ic_share"
+                            app:tint="@color/primary" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/share_code"
+                            android:textSize="12sp"
+                            android:textColor="@color/text_secondary"
+                            android:layout_marginTop="4dp" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Members Card -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/divider_light"
+            app:strokeWidth="0.5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/household_members"
+                    android:textSize="13sp"
+                    android:textColor="@color/text_secondary"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.08"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:id="@+id/membersContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Security Info -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/divider_light"
+            app:strokeWidth="0.5dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔒"
+                    android:textSize="22sp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:layout_marginStart="14dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="הצפנה מלאה"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:id="@+id/securityNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="ההודעות והנתונים שלך מוגנים בהצפנה מלאה מקצה לקצה"
+                        android:textSize="13sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginTop="3dp" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Logout Button -->
+        <TextView
+            android:id="@+id/logoutBtn"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:text="@string/logout"
+            android:textSize="16sp"
+            android:textColor="@color/system_red"
+            android:gravity="center"
+            android:background="@drawable/bg_tab_unselected"
+            android:layout_marginBottom="24dp" />
+
+    </LinearLayout>
+</ScrollView>

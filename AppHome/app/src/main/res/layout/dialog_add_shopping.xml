@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <EditText
+        android:id="@+id/itemNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:background="@drawable/bg_input_chat"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:hint="שם הפריט"
+        android:textColorHint="@color/text_tertiary"
+        android:textSize="16sp"
+        android:textColor="@color/text_primary"
+        android:inputType="text|textCapWords"
+        android:singleLine="true" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="קטגוריה:"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:textStyle="bold"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="8dp" />
+
+    <RadioGroup
+        android:id="@+id/categoryGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/catSupermarket"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="🛒  סופר"
+            android:checked="true"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+
+        <RadioButton
+            android:id="@+id/catElectronics"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="⚡  חשמל ואלקטרוניקה"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+
+        <RadioButton
+            android:id="@+id/catPharmacy"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="💊  בית מרקחת"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+
+        <RadioButton
+            android:id="@+id/catClothing"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="👕  ביגוד"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+
+        <RadioButton
+            android:id="@+id/catHome"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="🏠  בית וגינה"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+
+        <RadioButton
+            android:id="@+id/catOther"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:text="📦  אחר"
+            android:textSize="15sp"
+            android:buttonTint="@color/primary" />
+    </RadioGroup>
+
+</LinearLayout>

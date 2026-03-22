@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/shieor_bg">
+
+    <!-- ══ Toolbar ═════════════════════════════════════════════════════════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="12dp"
+        android:background="@color/shieor_bg">
+
+        <ImageView
+            android:id="@+id/zmanimBackBtn"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:padding="10dp"
+            android:src="@drawable/ic_back_arrow"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="חזור"
+            app:tint="@color/shieor_ink" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="זמנים הלכתיים"
+            android:textColor="@color/shieor_ink"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:fontFamily="@font/assistant" />
+
+        <!-- spacer to balance back button -->
+        <View
+            android:layout_width="44dp"
+            android:layout_height="44dp" />
+    </LinearLayout>
+
+    <!-- Divider -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/divider" />
+
+    <!-- ══ Scrollable body ══════════════════════════════════════════════════ -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:overScrollMode="never"
+        android:fillViewport="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="40dp">
+
+            <!-- ══ Header: clock icon + title ══════════════════════════════ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_marginBottom="20dp">
+
+                <!-- Clock icon in dark square -->
+                <FrameLayout
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:background="@drawable/bg_logo_square"
+                    android:layout_gravity="center">
+
+                    <ImageView
+                        android:layout_width="26dp"
+                        android:layout_height="26dp"
+                        android:layout_gravity="center"
+                        android:src="@drawable/ic_clock"
+                        app:tint="@color/white" />
+                </FrameLayout>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="זמנים הלכתיים"
+                    android:textSize="22sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/shieor_ink"
+                    android:fontFamily="@font/assistant" />
+
+                <!-- Hebrew date from Hebcal response -->
+                <TextView
+                    android:id="@+id/zmanimHebrewDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text=""
+                    android:textSize="13sp"
+                    android:textColor="@color/shieor_muted"
+                    android:fontFamily="@font/assistant"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <!-- ══ City selector ════════════════════════════════════════════ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCityTLV"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="ת&quot;א"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:fontFamily="@font/assistant"
+                    app:cornerRadius="19dp"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCityJLM"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="ירושלים"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:fontFamily="@font/assistant"
+                    app:cornerRadius="19dp"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCityHFA"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="חיפה"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:fontFamily="@font/assistant"
+                    app:cornerRadius="19dp"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnCityBS"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="38dp"
+                    android:layout_weight="1"
+                    android:text="ב&quot;ש"
+                    android:textSize="12sp"
+                    android:textAllCaps="false"
+                    android:fontFamily="@font/assistant"
+                    app:cornerRadius="19dp"
+                    app:strokeColor="@color/divider"
+                    app:strokeWidth="1dp" />
+            </LinearLayout>
+
+            <!-- ══ Date navigator ════════════════════════════════════════════ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:background="@drawable/bg_glass_panel"
+                android:padding="10dp"
+                android:layout_marginBottom="8dp">
+
+                <ImageButton
+                    android:id="@+id/zmanimBtnNextDate"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_chevron_right"
+                    android:background="@drawable/bg_nav_btn"
+                    android:contentDescription="יום הבא"
+                    app:tint="@color/shieor_ink" />
+
+                <TextView
+                    android:id="@+id/zmanimDateText"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:text=""
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/shieor_ink"
+                    android:fontFamily="@font/ba_hayetzira_regular" />
+
+                <ImageButton
+                    android:id="@+id/zmanimBtnPrevDate"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:src="@drawable/ic_chevron_left"
+                    android:background="@drawable/bg_nav_btn"
+                    android:contentDescription="יום קודם"
+                    app:tint="@color/shieor_ink" />
+            </LinearLayout>
+
+            <!-- Location badge -->
+            <TextView
+                android:id="@+id/zmanimLocationBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:text=""
+                android:textSize="13sp"
+                android:textColor="@color/shieor_muted"
+                android:fontFamily="@font/assistant" />
+
+            <!-- ══ Loading ═══════════════════════════════════════════════════ -->
+            <ProgressBar
+                android:id="@+id/zmanimLoader"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_gravity="center"
+                android:layout_marginTop="24dp"
+                android:layout_marginBottom="24dp"
+                android:indeterminateTint="@color/shieor_ink"
+                android:visibility="gone" />
+
+            <!-- Error -->
+            <TextView
+                android:id="@+id/zmanimError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="20dp"
+                android:background="@drawable/bg_glass_panel"
+                android:text=""
+                android:textSize="14sp"
+                android:textColor="@color/shieor_ink"
+                android:fontFamily="@font/assistant"
+                android:visibility="gone" />
+
+            <!-- ══ Zmanim list card ══════════════════════════════════════════ -->
+            <LinearLayout
+                android:id="@+id/zmanimListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/bg_glass_panel"
+                android:visibility="gone" />
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

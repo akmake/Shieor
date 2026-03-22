@@ -1,0 +1,151 @@
+<resources>
+    <string name="app_name">FamilyHub</string>
+
+    <!-- Login / Register -->
+    <string name="login_title">ברוכים הבאים</string>
+    <string name="login_subtitle">ניהול חכם למשפחה</string>
+    <string name="register_title">יצירת חשבון</string>
+    <string name="register_subtitle">הצטרפו ל-FamilyHub</string>
+    <string name="email_hint">כתובת מייל</string>
+    <string name="password_hint">סיסמה</string>
+    <string name="name_hint">שם מלא</string>
+    <string name="login_button">התחברות</string>
+    <string name="register_button">הרשמה</string>
+    <string name="no_account">אין לך חשבון? הירשם</string>
+    <string name="have_account">יש לך חשבון? התחבר</string>
+
+    <!-- Household Setup -->
+    <string name="household_setup_title">הגדרת משפחה</string>
+    <string name="household_setup_subtitle">חברו את בני המשפחה שלכם</string>
+    <string name="create_household">צור משק בית חדש</string>
+    <string name="join_household">הצטרפות למשפחה קיימת</string>
+    <string name="household_code_hint">קוד הצטרפות (6 ספרות)</string>
+    <string name="join_button">הצטרף</string>
+    <string name="household_code_label">קוד המשפחה שלך</string>
+    <string name="share_code_message">שתפו את הקוד עם בני המשפחה</string>
+    <string name="continue_button">המשך לאפליקציה</string>
+    <string name="or_divider">או</string>
+
+    <!-- Navigation -->
+    <string name="nav_home">בית</string>
+    <string name="nav_chat">צ\'אט</string>
+    <string name="nav_shopping">קניות</string>
+    <string name="nav_tasks">משימות</string>
+    <string name="nav_family">משפחה</string>
+
+    <!-- Home -->
+    <string name="welcome_message">שלום, %1$s</string>
+    <string name="home_summary_title">סיכום יומי</string>
+    <string name="pending_tasks">משימות\nממתינות</string>
+    <string name="shopping_items">פריטים\nלקנייה</string>
+    <string name="monthly_expenses">הוצאות\nהחודש</string>
+    <string name="unread_messages">הודעות\nחדשות</string>
+
+    <!-- Chat -->
+    <string name="chat_title">שיחות</string>
+    <string name="family_chat">צ\'אט משפחתי</string>
+    <string name="channels_title">ערוצים</string>
+    <string name="new_channel">ערוץ חדש</string>
+    <string name="channel_name_hint">שם הערוץ</string>
+    <string name="channel_desc_hint">תיאור (אופציונלי)</string>
+    <string name="message_hint">הודעה…</string>
+    <string name="send_button">שלח</string>
+    <string name="no_messages">אין הודעות עדיין\nהתחל שיחה! 💬</string>
+    <string name="type_message">כתוב הודעה…</string>
+    <string name="voice_message">הודעה קולית</string>
+    <string name="last_seen">נראה לאחרונה: %1$s</string>
+    <string name="online">מחובר/ת</string>
+    <string name="members_count">%1$d משתתפים</string>
+    <string name="join_channel">הצטרף לערוץ</string>
+    <string name="channel_link_label">קישור לערוץ:</string>
+    <string name="copy_link">העתק קישור</string>
+    <string name="link_copied">הקישור הועתק</string>
+
+    <!-- Shopping -->
+    <string name="add_item_hint">הוסף פריט…</string>
+    <string name="shopping_list_title">רשימת קניות</string>
+    <string name="clear_checked">נקה שנרכשו</string>
+    <string name="no_items">הרשימה ריקה\nהוסיפו פריטים 🛒</string>
+    <string name="cat_supermarket">סופר</string>
+    <string name="cat_electronics">חשמל</string>
+    <string name="cat_pharmacy">בית מרקחת</string>
+    <string name="cat_clothing">ביגוד</string>
+    <string name="cat_home_goods">בית וגינה</string>
+    <string name="cat_other_shopping">אחר</string>
+    <string name="select_category">בחר קטגוריה</string>
+
+    <!-- Tasks -->
+    <string name="add_task">משימה חדשה</string>
+    <string name="task_title_hint">כותרת המשימה</string>
+    <string name="task_description_hint">תיאור (אופציונלי)</string>
+    <string name="assign_to">הקצה ל:</string>
+    <string name="assign_me">אני</string>
+    <string name="assign_partner">בן/בת הזוג</string>
+    <string name="urgent_task">דחוף</string>
+    <string name="mark_urgent">סמן כדחוף</string>
+    <string name="tab_urgent">דחוף 🔴</string>
+    <string name="tab_general">כללי</string>
+    <string name="tab_done">הושלם</string>
+    <string name="no_tasks">אין משימות\nלחץ + כדי להוסיף ✅</string>
+    <string name="no_urgent_tasks">אין משימות דחופות 🎉</string>
+    <string name="no_general_tasks">אין משימות כלליות</string>
+    <string name="task_completed">הושלמה</string>
+    <string name="save">שמור</string>
+    <string name="cancel">ביטול</string>
+
+    <!-- Expenses -->
+    <string name="add_expense">הוצאה חדשה</string>
+    <string name="expense_title_hint">תיאור ההוצאה</string>
+    <string name="expense_amount_hint">סכום (₪)</string>
+    <string name="expense_category">קטגוריה</string>
+    <string name="monthly_total">סה\"כ החודש: ₪%1$s</string>
+    <string name="no_expenses">אין הוצאות החודש\nלחץ + להוסיף 💰</string>
+
+    <!-- Expense Categories -->
+    <string name="cat_food">מזון</string>
+    <string name="cat_transport">תחבורה</string>
+    <string name="cat_entertainment">בילויים</string>
+    <string name="cat_bills">חשבונות</string>
+    <string name="cat_shopping">קניות</string>
+    <string name="cat_health">בריאות</string>
+    <string name="cat_education">חינוך</string>
+    <string name="cat_other">אחר</string>
+
+    <!-- Family Management -->
+    <string name="family_management">ניהול משפחה</string>
+    <string name="household_code">קוד הצטרפות</string>
+    <string name="household_members">חברי המשפחה</string>
+    <string name="invite_member">הזמן חבר משפחה</string>
+    <string name="family_code_desc">שתף קוד זה כדי להצטרף למשפחה</string>
+    <string name="copy_code">העתק קוד</string>
+    <string name="code_copied">הקוד הועתק!</string>
+    <string name="share_code">שתף</string>
+    <string name="member_joined">הצטרף</string>
+    <string name="privacy_settings">הגדרות פרטיות</string>
+    <string name="last_seen_privacy">מי רואה את מתי הייתי מחובר</string>
+    <string name="everyone">כולם</string>
+    <string name="nobody">אף אחד</string>
+    <string name="profile_photo">תמונת פרופיל</string>
+    <string name="change_photo">החלף תמונה</string>
+    <string name="notifications_settings">הגדרות התראות</string>
+
+    <!-- Notifications -->
+    <string name="notif_new_message">הודעה חדשה</string>
+    <string name="notif_urgent_task">משימה דחופה חדשה!</string>
+    <string name="notif_channel_name_messages">הודעות</string>
+    <string name="notif_channel_name_tasks">משימות דחופות</string>
+
+    <!-- General -->
+    <string name="error_empty_fields">יש למלא את כל השדות</string>
+    <string name="error_login_failed">ההתחברות נכשלה. בדוק פרטים ונסה שוב</string>
+    <string name="error_register_failed">ההרשמה נכשלה. נסה שוב</string>
+    <string name="error_short_password">הסיסמה חייבת לכלול לפחות 6 תווים</string>
+    <string name="logout">התנתקות</string>
+    <string name="today">היום</string>
+    <string name="yesterday">אתמול</string>
+    <string name="delete">מחק</string>
+    <string name="loading">טוען…</string>
+    <string name="profile">פרופיל</string>
+    <string name="settings">הגדרות</string>
+    <string name="security_note">הצפנה מלאה מקצה לקצה 🔒</string>
+</resources>

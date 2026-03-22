@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="@dimen/spacing_md"
+    android:layout_marginEnd="@dimen/spacing_md"
+    android:layout_marginTop="@dimen/spacing_xs"
+    android:layout_marginBottom="@dimen/spacing_xs"
+    app:cardCornerRadius="@dimen/corner_radius_sm"
+    app:cardElevation="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_md"
+        android:gravity="center_vertical">
+
+        <!-- Category color indicator -->
+        <View
+            android:id="@+id/categoryColor"
+            android:layout_width="6dp"
+            android:layout_height="48dp"
+            android:background="@color/primary"
+            android:layout_marginEnd="@dimen/spacing_md" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/expenseTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="@dimen/text_body"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="4dp">
+
+                <TextView
+                    android:id="@+id/expenseCategory"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_tiny"
+                    android:textColor="@color/text_secondary"
+                    android:layout_marginEnd="@dimen/spacing_md" />
+
+                <TextView
+                    android:id="@+id/expenseDate"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_tiny"
+                    android:textColor="@color/text_secondary" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/expenseAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="@dimen/text_subtitle"
+            android:textColor="@color/primary"
+            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

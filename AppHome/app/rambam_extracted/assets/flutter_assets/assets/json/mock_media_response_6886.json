@@ -1,0 +1,23 @@
+{
+  "media": [
+    {
+      "sort": 1,
+      "title": "Rambam: Eruvin, Chapter 4",
+      "teacher-id": 13568,
+      "teacher-name": "Josh Gordon",
+      "teacher-image": "https://w2.chabad.org/media/images/936/cnVR9366947.jpg",
+      "duration": "29:54",
+      "audio-streaming-url": "https://hls-vod-cdn.chabad.org/vod/_definst_/mp3:media_root1/audio/jgordon/rambam/6756531_Rambam_142_Eruvin_4.mp3/playlist.m3u8"
+    },
+    {
+      "sort": 2,
+      "title": "Rambam: Eruvin, Chapter 4",
+      "teacher-id": 20375,
+      "teacher-name": "Avraham Zajac",
+      "teacher-image": "https://w2.chabad.org/media/images/1132/wcRd11327257.jpg",
+      "duration": "36:47",
+      "audio-streaming-url": "https://hls-vod-cdn.chabad.org/vod/_definst_/mp3:media_root1/audio/avraham_zajac/rambam-ch1/12283005_Zajac_Rambam_1ch_0142_Eruvin_ch_4.mp3/playlist.m3u8"
+    }
+  ],
+  "article-id": 6886
+}

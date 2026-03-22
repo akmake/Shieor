@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/background">
+
+    
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp"
+        android:background="@color/surface"
+        android:elevation="2dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:fontFamily="@font/assistant"
+            android:text="×‘×™×ª"
+            android:textColor="@color/text_primary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/toolbarSettingsBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_settings"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="×”×’×“×¨×•×ª"
+            app:tint="@color/text_secondary" />
+
+    </LinearLayout>
+
+    
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:overScrollMode="never">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="24dp">
+
+            
+            <TextView
+                android:id="@+id/dateHebrewText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:gravity="center"
+                android:fontFamily="@font/assistant"
+                android:text=""
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/rambamCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/rambam_primary"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="22dp">
+
+                    
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/assistant"
+                            android:text="×œ×™×ž×•×“ ×™×•×ž×™"
+                            android:textColor="#AADDD8"
+                            android:textSize="12sp"
+                            android:textAllCaps="false"
+                            android:letterSpacing="0.05" />
+
+                        
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/badge_white_pill"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp"
+                            android:fontFamily="@font/frank_ruhl_libre"
+                            android:text="×’×³ ×¤×¨×§×™×"
+                            android:textColor="@color/rambam_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    
+                    <TextView
+                        android:id="@+id/rambamPreviewTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="×˜×•×¢×Ÿ..."
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
+
+                    
+                    <TextView
+                        android:id="@+id/rambamPreviewChapters"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/assistant"
+                        android:text=""
+                        android:textColor="#CCE8E5"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="20dp" />
+
+                    
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/rambamReadBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:text="×§×¨× ×¢×›×©×™×•"
+                        android:textSize="16sp"
+                        android:textColor="@color/rambam_primary"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/assistant"
+                        app:backgroundTint="@color/surface"
+                        app:cornerRadius="12dp"
+                        app:elevation="0dp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/tasksCard"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/divider_light"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ðŸ“‹"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/assistant"
+                            android:text="×ž×©×™×ž×•×ª"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/shoppingCard"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/divider_light"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="ðŸ›’"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/assistant"
+                            android:text="×§× ×™×•×ª"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>

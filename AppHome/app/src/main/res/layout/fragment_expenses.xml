@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <!-- Premium Monthly Total Header -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="0dp"
+            app:cardElevation="4dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_gradient"
+                android:padding="@dimen/spacing_lg"
+                android:gravity="center">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="💰"
+                    android:textSize="24sp"
+                    android:layout_marginEnd="@dimen/spacing_sm" />
+
+                <TextView
+                    android:id="@+id/monthlyTotalText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/text_title"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:fontFamily="sans-serif-medium" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/expensesRecycler"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="@dimen/spacing_sm"
+            android:clipToPadding="false"
+            android:paddingBottom="80dp" />
+
+        <TextView
+            android:id="@+id/emptyText"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/no_expenses"
+            android:textSize="@dimen/text_body"
+            android:textColor="@color/text_secondary"
+            android:lineSpacingExtra="4dp"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/addExpenseFab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_margin="@dimen/fab_margin"
+        android:text="@string/add_expense"
+        android:textAllCaps="false"
+        app:icon="@drawable/ic_add"
+        app:backgroundTint="@color/primary"
+        android:textColor="@color/white"
+        app:iconTint="@color/white" />
+</FrameLayout>
