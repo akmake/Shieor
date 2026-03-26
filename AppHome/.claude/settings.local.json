@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\AppHome && gradlew.bat assembleDebug\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(powershell.exe -Command \"Set-Location ''C:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\AppHome''; & ''.\\\\gradlew.bat'' assembleDebug 2>&1 | Tee-Object -FilePath ''C:\\\\Users\\\\yosef\\\\AppData\\\\Local\\\\Temp\\\\gradle_build.log''; Write-Host ''DONE''\")",
+      "WebFetch(domain:www.sefaria.org)",
+      "Bash(cmd /c gradlew.bat dependencies --configuration releaseRuntimeClasspath)",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\AppHome''; .\\\\gradlew.bat assembleDebug 2>&1\")",
+      "Bash(powershell -Command \"Set-Location ''C:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\AppHome''; .\\\\gradlew.bat --refresh-dependencies checkDebugAarMetadata 2>&1\")",
+      "WebFetch(domain:jitpack.io)",
+      "Bash(cmd.exe /c \"gradlew.bat assembleDebug\")",
+      "Bash(powershell.exe -Command \"Set-Location ''c:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\AppHome''; .\\\\gradlew.bat assembleDebug 2>&1 | Out-String\")"
+    ]
+  }
+}

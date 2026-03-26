@@ -23,7 +23,9 @@ fun AppNavGraph() {
                 onZmanimClick = { nav.navigate("zmanim") },
                 onSettingsClick = { nav.navigate("settings") },
                 onLocationZonesClick = { nav.navigate("locationZones") },
-                onRabbenuTamClick = { nav.navigate("rabbenuTam") }
+                onRabbenuTamClick = { nav.navigate("rabbenuTam") },
+                onPdfLibraryClick = { nav.navigate("pdfLibrary") },
+                onMamaarimClick = { nav.navigate("mamaarim") }
             )
         }
 
@@ -60,6 +62,29 @@ fun AppNavGraph() {
 
         composable("rabbenuTam") {
             RabbenuTamScreen(onBack = { nav.popBackStack() })
+        }
+
+        // ── הספרייה האישית — המסך הישן (PDF כתמונה) ────────────────────────
+        composable("pdfLibrary") {
+            PdfStudyScreen(onBack = { nav.popBackStack() })
+        }
+
+        // ── מאמרים — האזור החדש (חילוץ טקסט) ──────────────────────────────
+        composable("mamaarim") {
+            MamaarimScreen(
+                onBack = { nav.popBackStack() },
+                onOpen = { id -> nav.navigate("mamaarReader/$id") }
+            )
+        }
+
+        composable(
+            "mamaarReader/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.StringType })
+        ) { back ->
+            MamaarReaderScreen(
+                mamaarId = back.arguments?.getString("id") ?: "",
+                onBack   = { nav.popBackStack() }
+            )
         }
     }
 }

@@ -55,3 +55,17 @@ export const deleteArticle = async (req, res, next) => {
     next(err);
   }
 };
+export const updateArticle = async (req, res, next) => {
+  try {
+    const { title, rawText } = req.body;
+    const article = await Article.findByIdAndUpdate(
+      req.params.id,
+      { title, rawText },
+      { new: true }
+    );
+    if (!article) return res.status(404).json({ message: 'המאמר לא נמצא' });
+    res.json(article);
+  } catch (err) {
+    next(err);
+  }
+};

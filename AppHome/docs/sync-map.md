@@ -166,8 +166,26 @@ Also review:
 
 Also review:
 - `app/src/main/AndroidManifest.xml` — receiver registration
-- `app/src/main/java/com/example/goodstart/adapters/ZmanAdapter.java` — schedules the alarm
-- `docs/architecture.md` — notification channel `zmanim_alerts`
+- `app/src/main/java/com/example/goodstart/alarm/ZmanimAlarmService.kt` — started by this receiver
+- `docs/architecture.md` — notification channel `zmanim_alarm_channel`
+
+---
+
+## When changing: `app/src/main/java/com/example/goodstart/alarm/ZmanimAlarmService.kt`
+
+Also review:
+- `app/src/main/AndroidManifest.xml` — service registration (`foregroundServiceType="mediaPlayback"`)
+- `app/src/main/java/com/example/goodstart/ZmanimAlarmReceiver.java` — starts this service
+- `app/src/main/java/com/example/goodstart/alarm/AlarmConfig.kt` — data passed via extras
+- `docs/architecture.md` — notification channel `zmanim_alarm_channel`
+
+---
+
+## When changing: `app/src/main/java/com/example/goodstart/alarm/AlarmConfig.kt`
+
+Also review:
+- `app/src/main/java/com/example/goodstart/ui/viewmodel/ZmanimViewModel.kt` — serializes/deserializes via Gson to SharedPreferences `ZmanimAlarms`
+- `app/src/main/java/com/example/goodstart/ui/screen/ZmanimAlarmDialog.kt` — binds all fields to UI
 
 ---
 
@@ -186,6 +204,24 @@ Also review:
 Also review:
 - `docs/architecture.md` — permissions and components tables
 - Any activity added/removed must be reflected in manifest
+
+---
+
+## When changing: `app/src/main/java/com/example/goodstart/util/MamaarExtractor.kt`
+
+Also review:
+- `app/src/main/java/com/example/goodstart/ui/viewmodel/MamaarimViewModel.kt` — calls extractor
+- `app/src/main/java/com/example/goodstart/model/Mamaar.kt` — data model
+- `docs/modules/mamaarim.md` (if created) — feature docs
+
+---
+
+## When changing: `app/src/main/java/com/example/goodstart/ui/viewmodel/MamaarimViewModel.kt`
+
+Also review:
+- `app/src/main/java/com/example/goodstart/ui/screen/MamaarimScreen.kt` — list screen
+- `app/src/main/java/com/example/goodstart/ui/screen/MamaarReaderScreen.kt` — reader screen
+- `app/src/main/java/com/example/goodstart/util/MamaarExtractor.kt` — extraction logic
 
 ---
 

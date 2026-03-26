@@ -1,48 +1,27 @@
 package com.example.goodstart;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 
-import androidx.core.app.NotificationCompat;
+import com.example.goodstart.alarm.ZmanimAlarmService;
 
 public class ZmanimAlarmReceiver extends BroadcastReceiver {
-    public static final String CHANNEL_ID = "zmanim_alerts";
-    public static final String EXTRA_ZMAN_NAME = "zman_name";
+    public static final String EXTRA_ZMAN_LABEL  = "zman_label";
+    public static final String EXTRA_RING_COUNT  = "ring_count";
+    public static final String EXTRA_RINGTONE_URI = "ringtone_uri";
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String zmanName = intent.getStringExtra(EXTRA_ZMAN_NAME);
-        if (zmanName == null) zmanName = "זמן הלכתי";
+        String zmanLabel   = intent.getStringExtra(EXTRA_ZMAN_LABEL);
+        int    ringCount   = intent.getIntExtra(EXTRA_RING_COUNT, 3);
+        String ringtoneUri = intent.getStringExtra(EXTRA_RINGTONE_URI);
+        if (ringtoneUri == null) ringtoneUri = "";
 
-        showNotification(context, zmanName);
-    }
-
-    private void showNotification(Context context, String zmanName) {
-        NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID, "התראות זמני היום",
-                    NotificationManager.IMPORTANCE_HIGH);
-            nm.createNotificationChannel(channel);
-        }
-
-        Intent intent = new Intent(context, MainActivity.class);
-        PendingIntent pi = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notifications_active)
-                .setContentTitle("התראת זמנים")
-                .setContentText("הגיע הזמן: " + zmanName)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setAutoCancel(true)
-                .setContentIntent(pi);
-
-        nm.notify((int) System.currentTimeMillis(), builder.build());
+        Intent serviceIntent = new Intent(context, ZmanimAlarmService.class);
+        serviceIntent.putExtra(ZmanimAlarmService.EXTRA_ZMAN_LABEL,   zmanLabel);
+        serviceIntent.putExtra(ZmanimAlarmService.EXTRA_RING_COUNT,    ringCount);
+        serviceIntent.putExtra(ZmanimAlarmService.EXTRA_RINGTONE_URI,  ringtoneUri);
+        context.startForegroundService(serviceIntent);
     }
 }

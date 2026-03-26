@@ -23,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -43,18 +46,38 @@ fun LocationZoneScreen(
 ) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     fun refreshPermissions() {
         val hasFine = ContextCompat.checkSelfPermission(
             context, Manifest.permission.ACCESS_FINE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
+        val hasBackground = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        vm.updatePermissions(nm.isNotificationPolicyAccessGranted, hasFine)
+        vm.updatePermissions(nm.isNotificationPolicyAccessGranted, hasFine && hasBackground)
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshPermissions()
+                if (state.hasLocationPermission) vm.reregisterAll()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
     }
 
     LaunchedEffect(Unit) {
         refreshPermissions()
-        if (state.hasLocationPermission) vm.reregisterAll()
     }
 
     val backgroundLocationLauncher = rememberLauncherForActivityResult(
@@ -106,11 +129,16 @@ fun LocationZoneScreen(
         }
 
         if (!state.hasLocationPermission) {
+            val hasFine = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
             PermissionBanner(
-                text = "נדרשת הרשאת מיקום תמידית לפעולת האזורים",
+                text = if (!hasFine) "נדרשת הרשאת מיקום לפעולת השתקה" else "נדרשת הרשאת מיקום 'תמיד' לפעולה מדוייקת",
                 buttonText = "אפשר"
             ) {
-                locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                if (!hasFine) {
+                    locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                } else if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                }
             }
         }
         if (!state.hasDndPermission) {
@@ -126,6 +154,7 @@ fun LocationZoneScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraState,
+                properties = MapProperties(isMyLocationEnabled = state.hasLocationPermission),
                 onMapLongClick = { latLng ->
                     pendingLatLng = latLng
                     showAddDialog = true

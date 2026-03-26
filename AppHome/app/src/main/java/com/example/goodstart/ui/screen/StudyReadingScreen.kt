@@ -1,9 +1,11 @@
 package com.example.goodstart.ui.screen
 
 import android.content.Context
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
@@ -177,6 +180,74 @@ fun StudyReadingScreen(
                     }
                 }
             }
+            // Study Progress Map at the absolute bottom
+            if (state.sections.isNotEmpty()) {
+                StudyProgressBar(
+                    sections = state.sections,
+                    listState = listState,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudyProgressBar(
+    sections: List<Section>,
+    listState: LazyListState,
+    modifier: Modifier = Modifier
+) {
+    val total = sections.size
+    val firstVisible by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    
+    // Calculate progress: how much of the list we have scrolled past
+    val progress by remember {
+        derivedStateOf {
+            if (total > 1) {
+                (firstVisible.toFloat() / (total - 1).toFloat()).coerceIn(0f, 1f)
+            } else 0f
+        }
+    }
+
+    // Find markers for headers (chapters, aliyot, etc.)
+    val markers = remember(sections) {
+        sections.mapIndexedNotNull { index, section ->
+            if (section.isHeader || section.isChapterHeader || section.isAliyahHeader) {
+                index.toFloat() / total.toFloat()
+            } else null
+        }
+    }
+
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(5.dp)
+            .background(Color(0xFFE5E7EB)) // Subtle gray background
+    ) {
+        val width = size.width
+        val height = size.height
+
+        // Since the app is RTL, the drawing logic needs to respect that.
+        // In a Box with alignment, coordinates are standard, but we'll draw from right to left
+        // or just let it be standard LTR for the bar itself if it feels more natural as a "loading" bar.
+        // Usually, progress bars stay LTR. Let's stick to standard progress feel.
+        
+        // Progress fill (Primary Green)
+        drawRect(
+            color = Primary,
+            size = size.copy(width = width * progress)
+        )
+
+        // Chapter/Section Markers
+        markers.forEach { markerProgress ->
+            val x = width * markerProgress
+            drawLine(
+                color = Color.Black.copy(alpha = 0.15f),
+                start = Offset(x, 0f),
+                end = Offset(x, height),
+                strokeWidth = 1.5.dp.toPx()
+            )
         }
     }
 }

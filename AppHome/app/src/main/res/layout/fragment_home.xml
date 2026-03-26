@@ -4,105 +4,46 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@color/shieor_bg">
+    android:background="@color/background">
 
-    <!-- ══ Navbar (matches website top bar) ══════════════════════════════════ -->
-    <FrameLayout
+    <!-- ══ Top bar ══════════════════════════════════════════════════════════ -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="16dp"
-        android:paddingTop="16dp"
-        android:paddingBottom="6dp">
+        android:layout_height="58dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="20dp"
+        android:paddingEnd="12dp"
+        android:background="@color/surface"
+        android:elevation="2dp">
 
-        <LinearLayout
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:background="@drawable/bg_navbar"
-            android:paddingHorizontal="16dp"
-            android:paddingVertical="12dp"
-            android:elevation="4dp">
+            android:layout_weight="1"
+            android:fontFamily="@font/frank_ruhl_libre"
+            android:text="בית"
+            android:textColor="@color/text_primary"
+            android:textSize="22sp"
+            android:textStyle="bold" />
 
-            <!-- Logo block -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+        <ImageView
+            android:id="@+id/toolbarSettingsBtn"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="8dp"
+            android:src="@drawable/ic_settings"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="הגדרות"
+            app:tint="@color/text_secondary" />
 
-                <!-- Dark square with scroll icon -->
-                <FrameLayout
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@drawable/bg_logo_square">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:text="&#x1F4DC;"
-                        android:textSize="16sp" />
-                </FrameLayout>
-
-                <!-- Brand text -->
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginStart="10dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="SHIEOR"
-                        android:textSize="10sp"
-                        android:textColor="@color/shieor_brand"
-                        android:textStyle="bold"
-                        android:letterSpacing="0.24"
-                        android:fontFamily="@font/assistant" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="לימוד יומי"
-                        android:textSize="13sp"
-                        android:textColor="@color/shieor_ink"
-                        android:fontFamily="@font/assistant" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Zmanim (clock) button -->
-            <ImageView
-                android:id="@+id/toolbarZmanimBtn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:padding="8dp"
-                android:src="@drawable/ic_clock"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="זמנים"
-                android:layout_marginEnd="4dp"
-                app:tint="@color/shieor_ink" />
-
-            <!-- Settings button -->
-            <ImageView
-                android:id="@+id/toolbarSettingsBtn"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:padding="8dp"
-                android:src="@drawable/ic_settings"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/settings"
-                app:tint="@color/shieor_ink" />
-        </LinearLayout>
-    </FrameLayout>
+    </LinearLayout>
 
     <!-- ══ Scrollable body ══════════════════════════════════════════════════ -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="false"
+        android:fillViewport="true"
         android:overScrollMode="never">
 
         <LinearLayout
@@ -110,89 +51,345 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:paddingHorizontal="16dp"
-            android:paddingTop="16dp"
-            android:paddingBottom="40dp">
+            android:paddingTop="20dp"
+            android:paddingBottom="24dp">
 
-            <!-- ══ Date Navigator — glass-panel p-3 flex items-center justify-between ══ -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="@drawable/bg_glass_panel"
-                android:padding="12dp"
-                android:layout_marginBottom="16dp">
-
-                <!-- Next day — nav-btn: w-12 h-12 (48dp) rounded-full border bg-white -->
-                <ImageButton
-                    android:id="@+id/btnNextDate"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_chevron_right"
-                    android:background="@drawable/bg_nav_btn"
-                    android:contentDescription="היום הבא"
-                    app:tint="@color/shieor_ink" />
-
-                <!-- Date text center -->
-                <TextView
-                    android:id="@+id/dateText"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:textSize="18sp"
-                    android:textColor="@color/shieor_ink"
-                    android:textStyle="bold"
-                    android:fontFamily="@font/ba_hayetzira_regular" />
-
-                <!-- Prev day — nav-btn: w-12 h-12 (48dp) rounded-full border bg-white -->
-                <ImageButton
-                    android:id="@+id/btnPrevDate"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:src="@drawable/ic_chevron_left"
-                    android:background="@drawable/bg_nav_btn"
-                    android:contentDescription="היום הקודם"
-                    app:tint="@color/shieor_ink" />
-            </LinearLayout>
-
-            <!-- Loading state -->
+            <!-- Hebrew date -->
             <TextView
-                android:id="@+id/loadingText"
+                android:id="@+id/dateHebrewText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
+                android:layout_marginBottom="20dp"
                 android:gravity="center"
-                android:padding="24dp"
-                android:background="@drawable/bg_glass_panel"
-                android:text="טוען לימודי היום..."
-                android:textColor="@color/shieor_muted"
-                android:fontFamily="@font/assistant"
-                android:textSize="14sp"
-                android:layout_marginBottom="12dp" />
-
-            <!-- Error state -->
-            <TextView
-                android:id="@+id/errorText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:visibility="gone"
-                android:gravity="center"
-                android:padding="24dp"
-                android:background="@drawable/bg_glass_panel"
+                android:fontFamily="@font/frank_ruhl_libre"
                 android:text=""
-                android:textColor="@color/shieor_ink"
-                android:fontFamily="@font/assistant"
-                android:textSize="14sp"
-                android:layout_marginBottom="12dp" />
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
 
-            <!-- ══ Study cards (populated programmatically) ══════════════════ -->
-            <LinearLayout
-                android:id="@+id/studyCardsContainer"
+            <!-- ══ Rambam daily learning card ════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/rambamCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone" />
+                android:layout_marginBottom="12dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="@color/rambam_primary"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="22dp">
+
+                    <!-- Label row -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="@font/frank_ruhl_libre"
+                            android:text="לימוד יומי"
+                            android:textColor="#AADDD8"
+                            android:textSize="12sp"
+                            android:textAllCaps="false"
+                            android:letterSpacing="0.05" />
+
+                        <!-- Badge "ג' פרקים" -->
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/badge_white_pill"
+                            android:paddingHorizontal="10dp"
+                            android:paddingVertical="3dp"
+                            android:fontFamily="@font/frank_ruhl_libre"
+                            android:text="ג׳ פרקים"
+                            android:textColor="@color/rambam_primary"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <!-- Book name — loaded from API, shows "טוען..." initially -->
+                    <TextView
+                        android:id="@+id/rambamPreviewTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="טוען..."
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
+
+                    <!-- Chapter range -->
+                    <TextView
+                        android:id="@+id/rambamPreviewChapters"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text=""
+                        android:textColor="#CCE8E5"
+                        android:textSize="14sp"
+                        android:layout_marginBottom="20dp" />
+
+                    <!-- CTA button -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/rambamReadBtn"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:text="קרא עכשיו"
+                        android:textSize="16sp"
+                        android:textColor="@color/rambam_primary"
+                        android:textStyle="bold"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        app:backgroundTint="@color/surface"
+                        app:cornerRadius="12dp"
+                        app:elevation="0dp" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Shnayim Mikra Card ════════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/shmaMikraCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="12dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="#2196F3"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="22dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="פרשת השבוע"
+                        android:textColor="#BBDEFB"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/shmaMikraTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="שניים מקרא"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/shmaMikraSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="טוען..."
+                        android:textColor="#BBDEFB"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ══ Chumash + Rashi Card ══════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/chumashRashiCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:foreground="?attr/selectableItemBackground"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardBackgroundColor="#FF9800"
+                app:cardCornerRadius="20dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="24dp"
+                    android:paddingTop="22dp"
+                    android:paddingBottom="22dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="לימוד יומי"
+                        android:textColor="#FFE0B2"
+                        android:textSize="12sp"
+                        android:layout_marginBottom="12dp" />
+
+                    <TextView
+                        android:id="@+id/chumashRashiTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="חומש עם רש״י"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/chumashRashiSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="טוען..."
+                        android:textColor="#FFE0B2"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <!-- ══ Personal PDF Library Card ═════════════════════════════════════════ -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/pdfLibraryCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#D0DCE5"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="ספרייה אישית"
+                        android:textColor="#263238"
+                        android:textSize="24sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="6dp" />
+
+                    <TextView
+                        android:id="@+id/pdfLibrarySubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/frank_ruhl_libre"
+                        android:text="המשך לימוד אישי מתוך קובץ PDF (גמרא / שיחות)"
+                        android:textColor="#546E7A"
+                        android:textSize="14sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <!-- ══ Quick-access cards row ════════════════════════════════════ -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/tasksCard"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/divider_light"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="📋"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/frank_ruhl_libre"
+                            android:text="משימות"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/shoppingCard"
+                    android:layout_width="0dp"
+                    android:layout_height="64dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    app:cardBackgroundColor="@color/surface"
+                    app:cardCornerRadius="14dp"
+                    app:cardElevation="0dp"
+                    app:strokeColor="@color/divider_light"
+                    app:strokeWidth="1dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🛒"
+                            android:textSize="18sp" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:fontFamily="@font/frank_ruhl_libre"
+                            android:text="קניות"
+                            android:textColor="@color/text_primary"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
 
         </LinearLayout>
     </ScrollView>

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.WindowCompat
+import com.example.goodstart.network.StudySyncWorker
 import com.example.goodstart.ui.navigation.AppNavGraph
 import com.example.goodstart.ui.theme.ShieorTheme
 
@@ -15,6 +16,10 @@ class MainActivity : ComponentActivity() {
     }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Start background sync for study materials
+        StudySyncWorker.enqueue(this)
+
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
         setContent {

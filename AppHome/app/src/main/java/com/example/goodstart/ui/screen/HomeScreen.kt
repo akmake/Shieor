@@ -44,6 +44,8 @@ fun HomeScreen(
     onSettingsClick: () -> Unit,
     onLocationZonesClick: () -> Unit = {},
     onRabbenuTamClick: () -> Unit = {},
+    onPdfLibraryClick: () -> Unit = {},
+    onMamaarimClick: () -> Unit = {},
     vm: HomeViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
@@ -154,6 +156,14 @@ fun HomeScreen(
                 item {
                     RabbenuTamCard(onClick = onRabbenuTamClick)
                 }
+                item {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    PdfLibraryCard(onClick = onPdfLibraryClick)
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    MamaarimCard(onClick = onMamaarimClick)
+                }
             }
         }
     }
@@ -195,6 +205,44 @@ private fun RabbenuTamCard(onClick: () -> Unit) {
                 Text("לפי רבינו תם", fontSize = 12.sp, color = Muted, maxLines = 1)
             }
             Icon(Icons.Default.ChevronLeft, null, tint = Primary, modifier = Modifier.padding(end = 14.dp).size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun PdfLibraryCard(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        shadowElevation = 1.dp,
+        color = Color(0xFFD0DCE5)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(80.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Color(0xFF263238)))
+            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
+                Text("ספרייה אישית", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF263238), maxLines = 1)
+                Text("המשך לימוד אישי מתוך קובץ PDF (גמרא / שיחות)", fontSize = 13.sp, color = Color(0xFF546E7A), maxLines = 2)
+            }
+            Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF263238), modifier = Modifier.padding(end = 14.dp).size(20.dp))
+        }
+    }
+}
+
+@Composable
+private fun MamaarimCard(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        shadowElevation = 1.dp,
+        color = Color(0xFFE8F5E9)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth().height(80.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Color(0xFF2E7D32)))
+            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
+                Text("מאמרים", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF1B5E20), maxLines = 1)
+                Text("ייבא מאמר מ-PDF · הטקסט יחולץ לקריאה אופליין", fontSize = 13.sp, color = Color(0xFF388E3C), maxLines = 2)
+            }
+            Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF2E7D32), modifier = Modifier.padding(end = 14.dp).size(20.dp))
         }
     }
 }
