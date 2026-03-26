@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import { createWorker } from 'tesseract.js';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -40,117 +39,153 @@ async function renderPage(page, scale = 2.5) {
 }
 
 // ═══════════════════════════════════════════════
-// ניקוי טקסט OCR
+// פענוח וניקוי טקסט PDF איכותי ללא Tesseract
 // ═══════════════════════════════════════════════
-const HEADER_PATTERNS = [
-  /ש"פ\s*צו/,
-  /שבת.{0,4}הגדול/,
-  /מזמור.{0,6}צמאה/,
-  /ניסן.{0,10}מאמר/,
-  /ה'תשכ"ד/,
-  /ô"ù|ä'úùë/,   // garbled header fragments that slipped through
-];
+const hebrewMap = {
+  0xe0: 'א', 0x2021: 'א', 0xe1: 'ב', 0x00B7: 'ב', 0xe2: 'ג', 0x201A: 'ג', 0xe3: 'ד', 0x201E: 'ד',
+  0xe4: 'ה', 0x2030: 'ה', 0xe5: 'ו', 0x00C2: 'ו', 0xe6: 'ז', 0x00CA: 'ז', 0xe7: 'ח', 0x00C1: 'ח',
+  0xe8: 'ט', 0x00CB: 'ט', 0xe9: 'י', 0x00C8: 'י', 0xC8: 'י', 0xea: 'ך', 0x00CD: 'ך', 0xCD: 'ך',
+  0xeb: 'כ', 0x00CE: 'כ', 0xec: 'ל', 0x00CF: 'ל', 0xCF: 'ל', 0xed: 'ם', 0x00CC: 'ם',
+  0xee: 'מ', 0x00D3: 'מ', 0xD3: 'מ', 0xef: 'ן', 0x00D4: 'ן', 0xf0: 'נ', 0xF8FF: 'נ',
+  0xf1: 'ס', 0x00D2: 'ס', 0xf2: 'ע', 0x00DA: 'ע', 0xf3: 'ף', 0x00DB: 'ף', 0xf4: 'פ', 0x00D9: 'פ', 0xD9: 'פ',
+  0xf5: 'ץ', 0x0131: 'ץ', 0xf6: 'צ', 0x02C6: 'צ', 0xf7: 'ק', 0x02DC: 'ק', 0xf8: 'ר', 0x00AF: 'ר',
+  0xf9: 'ש', 0x02D8: 'ש', 0xfa: 'ת', 0x02D9: 'ת'
+};
 
-function isHeaderLine(line) {
-  if (line.length > 80) return false; // headers are short
-  return HEADER_PATTERNS.some(p => p.test(line));
-}
-
-// שורות הערות שוליים שדלפו מתחתית הדף
-function isFootnoteLine(line) {
-  // שורת הערה: מתחילה במספר ערבי + סוגריים  e.g. "9) ראה..."
-  if (/^\d{1,3}\)\s/.test(line)) return true;
-  // מספר הערה אמצעי בשורה: "...יט. 6) תהלים..."  or  "...ע' 7) יל"ש..."
-  if (/\d{1,2}\)\s[\u05D0-\u05EA]/.test(line)) return true;
-  // קיצור ביבליוגרפי אופייני להערות: ובכ"מ
-  if (/ובכ"מ/.test(line)) return true;
-  return false;
-}
-
-// שורות OCR מקולקלות — קווי עיצוב, מפרידים גרפיים
-function isGarbledLine(line) {
-  if (/[>|]/.test(line)) return true;         // תווי ASCII שאין להם מקום בטקסט עברי
-  if (/[=+]{3,}/.test(line)) return true;     // רצף של = או +
-  if (/^--/.test(line)) return true;           // שורה שמתחילה ב--
-  return false;
-}
-
-function cleanText(rawText) {
-  const lines = rawText.split('\n');
-  const out   = [];
-
-  for (let line of lines) {
-    line = line.trim();
-
-    // מסיר שורות ריקות — ינוהלו בנפרד
-    if (!line) { out.push(''); continue; }
-
-    // מספרי עמודים: שורה שהיא רק ספרות (249, 250...)
-    if (/^\d{1,4}$/.test(line)) continue;
-
-    // כותרות ראשה
-    if (isHeaderLine(line)) continue;
-
-    // הערות שוליים שדלפו
-    if (isFootnoteLine(line)) continue;
-
-    // שורות OCR מקולקלות
-    if (isGarbledLine(line)) continue;
-
-    // מסיר סמני הערות שוליים inline:
-    // מספר קטן (1–66) הצמוד לאחר תו עברי או לפני תו עברי
-    line = line.replace(/(?<=[\u05D0-\u05EA'"\u05F3\u05F4,.])\s*\d{1,2}(?=[\s,.\u05D0-\u05EA'"\u05F3\u05F4(]|$)/g, '');
-    // ניקוי גם מספר שנשאר לבדו בין רווחים
-    line = line.replace(/(?<!\S)\d{1,2}(?!\S)/g, '');
-
-    line = line.replace(/\s{2,}/g, ' ').trim();
-    if (line.length < 2) continue;
-
-    out.push(line);
+function fixHebrew(text) {
+  let out = '';
+  for (let i = 0; i < text.length; i++) {
+    const code = text.charCodeAt(i);
+    if (hebrewMap[code]) out += hebrewMap[code];
+    else out += text[i];
   }
-
-  // מקפל שורות ריקות מרובות לאחת
-  return out
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return out;
 }
 
-// ═══════════════════════════════════════════════
-// חילוץ OCR מלא
-// ═══════════════════════════════════════════════
 async function extractOCR(file, onProgress) {
   const buf = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
   const numPages = pdf.numPages;
 
-  const worker = await createWorker('heb', 1, {
-    workerPath: 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js',
-    langPath:   'https://tessdata.projectnaptha.com/4.0.0',
-    corePath:   'https://cdn.jsdelivr.net/npm/tesseract.js-core@5/tesseract-core-simd-lstm.wasm.js',
-    logger: (m) => {
-      if (m.status === 'recognizing text') onProgress?.(m.progress, null, null);
-    },
-  });
+  let allParagraphs = [];
 
-  const pageTexts = [];
   for (let i = 1; i <= numPages; i++) {
-    onProgress?.(0, i, numPages);
-    const page   = await pdf.getPage(i);
-    const canvas = await renderPage(page);
-    const { data: { text } } = await worker.recognize(canvas);
-    pageTexts.push(cleanText(text));
+    onProgress?.(1, i, numPages);
+    const page = await pdf.getPage(i);
+    const viewport = page.getViewport({ scale: 1 });
+    const content = await page.getTextContent();
+
+    let items = content.items.map(item => {
+       return {
+         y: Math.round(item.transform[5]),
+         x: item.transform[4],
+         w: item.width,
+         fontSize: Math.abs(item.transform[3]),
+         fixedText: fixHebrew(item.str).split('').map(c => {
+             // החלפת סוגריים וסימנים דומים כי הכיוון הופך אותם
+             if(c === '(') return ')';
+             if(c === ')') return '(';
+             if(c === '[') return ']';
+             if(c === ']') return '[';
+             if(c === '{') return '}';
+             if(c === '}') return '{';
+             if(c === '<') return '>';
+             if(c === '>') return '<';
+             return c;
+         }).reverse().join('')
+       };
+    });
+
+    // בודקים היכן לרוב נמצא הכתב. כותרות רצות (מודפסות בראש העמוד, זוגיים או אי-זוגיים) לרוב נמצאות מעל נקודה מסוימת.
+    // מכיוון שיש כותרות גם בעמודים אי זוגיים וגם בעמודים זוגיים בספר, עדיף להוריד כל טקסט שנמצא ממש בקופסה העליונה.
+    const topCropY = viewport.height * 0.90; // נוריד כל דבר שנמצא ב-10% העליונים
+
+    // מסנן הערות שוליים, מספרי הערות ורווחים לא רלוונטיים
+    // גודל פונט 10 ומטה הם לרוב הערות בתחתית הדף או מספרים קטנים בגוף הטקסט
+    items = items.filter(item => {
+       if (item.fontSize < 11) return false;
+       if (item.fixedText.trim().length === 0) return false;
+       
+       // הסרת שורות כותרת ומספרי עמוד בהדר הפיזי (90% ומעלה מגובה העמוד המקורי)
+       // העמוד הראשון לרוב לא מקבל צנזור כזה כדי לא לאבד את כותרת המאמר עצמו
+       if (i !== 1 && item.y > topCropY) {
+           return false;
+       }
+       
+       return true;
+    });
+
+    // מיון לפי מיקום בציר ה-Y (שורות) ובציר ה-X (מימין לשמאל בתוך השורה)
+    items.sort((a,b) => {
+       if (Math.abs(b.y - a.y) > 5) return b.y - a.y;
+       return b.x - a.x;
+    });
+
+    let lines = [];
+    let currentLine = '';
+    let lastY = -1000;
+    let lastLeft = -1000;
+
+    for (const item of items) {
+       // שורה חדשה
+       if (Math.abs(item.y - lastY) > 5) {
+           if (currentLine.length > 0) {
+               lines.push(currentLine);
+           }
+           currentLine = item.fixedText;
+       } else {
+           // אם המרחק בין המילה הנוכחית לקודמת גדול מ-4, אז מדובר במילה חדשה ויש להוסיף רווח
+           let gap = lastLeft - (item.x + item.w);
+           if (gap > 4) {
+               currentLine += ' ';
+           }
+           currentLine += item.fixedText;
+       }
+       lastY = item.y;
+       lastLeft = item.x;
+    }
+    if (currentLine.length > 0) lines.push(currentLine);
+
+    for (let line of lines) {
+       if (!line || line.trim() === '') continue;
+
+       // הפיכת הטקסט לעברית רגילה כבר קרתה ברמת המילה, אין צורך להפוך את כל השורה
+       let reversed = line.trim();
+
+       // מסננים מתקדמים לפסולות הנותרות
+       if (/^\d{1,4}$/.test(reversed)) continue; // שורת מספור עמוד (כמו 250) בלבד
+       if (reversed.includes('ספר המאמרים') || reversed.includes('תשכ"ד') || reversed.includes('ש"פ צו') || reversed.includes('שבת הגדול') || reversed.includes("ניסן ה'תשכ\"ד")) continue; // כותרות עמוד שנשארו
+
+       // מנקים רווחים כפולים (שקורים בעקבות תיקונים)
+       reversed = reversed.replace(/\s{2,}/g, ' ').trim();
+
+       // מסירים קווים ויזואלים (---------) שנשארו מההערות שוליים, אם איכשהו קיבלו גודל פונט 13
+       if (reversed.includes('__') || reversed.includes('--')) continue;
+
+       if (reversed.length < 2) continue;
+
+       allParagraphs.push(reversed);
+    }
   }
 
-  await worker.terminate();
+  let paragraphs = [];
+  let currentPara = [];
+  
+  for (let l of allParagraphs) {
+     currentPara.push(l);
+     // חיבור שורות לכדי פסקה מחוברת ברגע שיש סימן סיום (כמו נקודה או נקודתיים)
+     if (l.endsWith('.') || l.endsWith(':') || l.endsWith(';')) {
+        paragraphs.push(currentPara.join(' '));
+        currentPara = [];
+     }
+  }
+  // הוספת הפסקה האחרונה
+  if (currentPara.length > 0) paragraphs.push(currentPara.join(' '));
 
-  // מחבר עמודים — שומר על מעברי פסקאות
-  const full = pageTexts
-    .filter(t => t.length > 10)
-    .join('\n\n');
-
-  return { text: full, numPages };
+  return { text: paragraphs.join('\n\n'), numPages };
 }
+
+
 
 // ═══════════════════════════════════════════════
 // קומפוננטה
