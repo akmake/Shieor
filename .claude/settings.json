@@ -3,7 +3,13 @@
     "allow": [
       "Bash(./gradlew assembleDebug)",
       "Bash(cmd.exe /c \"gradlew.bat assembleDebug\")",
-      "Bash(cmd.exe /c \"cd /d c:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\Shieor\\\\AppHome && gradlew.bat assembleDebug 2>&1\")"
+      "Bash(cmd.exe /c \"cd /d c:\\\\Users\\\\yosef\\\\Documents\\\\GitHub\\\\Shieor\\\\AppHome && gradlew.bat assembleDebug 2>&1\")",
+      "Bash(python -c \"import fitz; print\\(''pymupdf ok''\\)\")",
+      "Bash(python -c \"import pdfminer; print\\(''pdfminer ok''\\)\")",
+      "Bash(python -c \"import fitz; print\\(''ok''\\)\")",
+      "Bash(python -c \"from pdfminer.high_level import extract_text_to_fp; print\\(''''ok''''\\)\")",
+      "Read(//c/Users/yosef/Downloads/**)",
+      "Bash(node -e \":*)"
     ]
   }
 }

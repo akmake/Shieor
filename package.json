@@ -9,7 +9,8 @@
   },
   "dependencies": {
     "dotenv": "^17.2.3",
-    "mongoose": "^9.0.1"
+    "mongoose": "^9.0.1",
+    "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
