@@ -25,7 +25,7 @@ const STUDY_CONFIG = {
     subtitle: 'שלושה פרקים במשנה תורה',
     accent: 'emerald',
     kind: 'chapters',
-    matchers: ['daily rambam (3 chapters)', 'daily rambam'],
+    matchers: ['daily rambam (3 chapters)'],
     detailMode: 'rambam', // שינינו מצב ייעודי לרמב"ם שיתמוך במערך דו-ממדי
     rules: ['מסלול של 3 פרקים ביום.'],
   },
@@ -315,8 +315,11 @@ function parseRambamAndroidStyle(textData) {
 }
 
 function mapSectionsHebrew(textData, startVerse) {
-  const hebrew = flattenBlocks(textData?.he || textData?.text);
+  const raw = textData?.he || textData?.text;
   const result = [];
+
+  // 1-D: single chapter (the normal case — cross-chapter rashi is handled in fetchTextByMode)
+  const hebrew = flattenBlocks(raw);
   for (let i = 0; i < hebrew.length; i += 1) {
     result.push({
       id: String(i + 1),
@@ -404,6 +407,69 @@ async function fetchTextByMode(ref, mode) {
     } catch (_) {}
   }
 
+  // Rashi + cross-chapter: e.g. "Leviticus 6:12-7:10"
+  // Sefaria returns only partial Rashi for multi-chapter ranges.
+  // Fix: get the chapter structure first, then fetch each chapter separately.
+  if (mode === 'rashi') {
+    const crossMatch = ref.match(/^(.+)\s+(\d+):(\d+)-(\d+):(\d+)$/);
+    if (crossMatch && crossMatch[2] !== crossMatch[4]) {
+      const book      = crossMatch[1];
+      const startCh   = parseInt(crossMatch[2], 10);
+      const startVs   = parseInt(crossMatch[3], 10);
+      const endVs     = parseInt(crossMatch[5], 10);
+
+      // Step 1: get chapter boundaries from main text (no commentary needed)
+      const mainData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+      const he2D = mainData?.he || mainData?.text;
+
+      if (Array.isArray(he2D) && Array.isArray(he2D[0])) {
+        const allSections = [];
+        let idCounter = 1;
+
+        for (let ci = 0; ci < he2D.length; ci += 1) {
+          const chapter   = startCh + ci;
+          const chStartVs = ci === 0 ? startVs : 1;
+          const chEndVs   = ci === he2D.length - 1 ? endVs : chStartVs + he2D[ci].length - 1;
+          const chRef     = `${book} ${chapter}:${chStartVs}-${chEndVs}`;
+          const safeChRef = encodeURI(chRef.replace(/ /g, '_'));
+
+          // Chapter header between chapters
+          if (ci > 0) {
+            allSections.push({
+              id: String(idCounter++),
+              isHeader: true,
+              isChapterHeader: true,
+              he: `פרק ${getHebrewOrdinal(chapter)}`,
+              en: '', rashi: [],
+            });
+          }
+
+          // Fetch this chapter with full Rashi
+          try {
+            const chData = await fetchJson(`/api/texts/${safeChRef}`, { context: 0, commentary: 1, pad: 0, lang: 'he' });
+            const chSections = mapSectionsHebrew(chData, chStartVs);
+
+            const rashis = mapRashiOnly(chData);
+            rashis.forEach(r => {
+              const vMatch = r.anchorRef ? r.anchorRef.match(/:(\d+)/) : null;
+              const vNum = vMatch ? parseInt(vMatch[1], 10) : chStartVs;
+              const target = chSections.find(s => s.verseNum === vNum);
+              if (target) target.rashi.push(r);
+              else if (chSections.length > 0) chSections[chSections.length - 1].rashi.push(r);
+            });
+
+            chSections.forEach(s => allSections.push({ ...s, id: String(idCounter++) }));
+          } catch (err) {
+            console.error(`[rashi] Chapter ${chapter} fetch failed:`, err.message);
+          }
+        }
+
+        return { sections: allSections };
+      }
+    }
+  }
+
+  // Standard flow (single chapter, or non-rashi mode)
   const textData = await fetchJson(`/api/texts/${safeRef}`, {
     context: 0,
     commentary: mode === 'rashi' ? 1 : 0,

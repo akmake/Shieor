@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import studyRoutes from './routes/studyRoutes.js';
 import articleRoutes from './routes/articleRoutes.js';
+import zmanimRoutes from './routes/zmanimRoutes.js';
 import globalErrorHandler from './middlewares/errorMiddleware.js';
 import connectDB from './config/db.js';
 
@@ -34,6 +35,7 @@ app.get('/api/health', (req, res) => {
 
 app.use('/api/study', studyRoutes);
 app.use('/api/articles', articleRoutes);
+app.use('/api/zmanim', zmanimRoutes);
 
 // טיפול בבקשות API לכתובות שלא קיימות (חובה לפני ה-Catch-all של ה-React)
 app.use('/api/*', (req, res) => {

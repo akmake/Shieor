@@ -24,7 +24,9 @@
       "WebFetch(domain:he.chabad.org)",
       "Bash(node scripts/buildRambam.js)",
       "Bash(taskkill /F /IM node.exe)",
-      "Bash(xargs ls:*)"
+      "Bash(xargs ls:*)",
+      "Bash(sed 's/class=\"\"\"\"g260\"\"\"\">//')",
+      "Bash(curl -s -L -A \"Mozilla/5.0 \\(Windows NT 10.0; Win64; x64\\) AppleWebKit/537.36 \\(KHTML, like Gecko\\) Chrome/124.0.0.0 Safari/537.36\" \"https://he.chabad.org/tools/Get_Zmanim?locationid=689&locationtype=1&tdate=3-27-2026\")"
     ]
   }
 }

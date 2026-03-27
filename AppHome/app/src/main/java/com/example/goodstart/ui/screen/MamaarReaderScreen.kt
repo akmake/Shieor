@@ -1,23 +1,30 @@
 package com.example.goodstart.ui.screen
 
+import android.content.Context
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.FormatListBulleted
+import androidx.compose.material.icons.filled.PauseCircle
+import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -25,9 +32,9 @@ import com.example.goodstart.model.Mamaar
 import com.example.goodstart.model.MamaarSection
 import com.example.goodstart.ui.theme.*
 import com.example.goodstart.ui.viewmodel.MamaarimViewModel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MamaarReaderScreen(
     mamaarId: String,
@@ -59,195 +66,197 @@ fun MamaarReaderScreen(
     })
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ReaderContent(mamaar: Mamaar, onBack: () -> Unit) {
-    val listState    = rememberLazyListState()
-    val coroutine    = rememberCoroutineScope()
-    var showToc      by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val prefs = remember { context.getSharedPreferences("RambamPrefs", Context.MODE_PRIVATE) }
+    val fontSize = remember { mutableIntStateOf(prefs.getInt("text_size_sp", 20)) }
+    val scrollSpeed = remember { mutableIntStateOf(prefs.getInt("scroll_speed", 40)) }
 
-    // Table-of-contents drawer
-    if (showToc) {
-        TocDrawer(
-            sections  = mamaar.sections,
-            onDismiss = { showToc = false },
-            onJump    = { idx ->
-                showToc = false
-                coroutine.launch { listState.animateScrollToItem(idx + 1) } // +1 for title item
-            }
-        )
+    val listState = rememberLazyListState()
+    var autoScrolling by remember { mutableStateOf(false) }
+
+    val scrollKey = "scroll_mamaar_${mamaar.id}"
+    var scrollRestored by remember { mutableStateOf(false) }
+
+    LaunchedEffect(mamaar.sections.isNotEmpty()) {
+        if (mamaar.sections.isNotEmpty() && !scrollRestored) {
+            val idx = prefs.getInt("${scrollKey}_idx", 0)
+            val off = prefs.getInt("${scrollKey}_off", 0)
+            if (idx > 0) listState.scrollToItem(idx, off)
+            scrollRestored = true
+        }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BgColor)
-    ) {
-        // ── Top bar ──────────────────────────────────────────────────────────
-        Surface(shadowElevation = 2.dp, color = Color.White) {
-            Column {
-                Spacer(Modifier.statusBarsPadding())
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
-                    }
-                    Text(
-                        text       = mamaar.title,
-                        modifier   = Modifier.weight(1f),
-                        fontSize   = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        fontFamily = BaHaYetzira,
-                        color      = Primary,
-                        maxLines   = 1
-                    )
-                    // Table of contents button – show only if there are headings
-                    if (mamaar.sections.any { it.heading != null }) {
-                        IconButton(onClick = { showToc = true }) {
-                            Icon(Icons.Default.FormatListBulleted, contentDescription = "תוכן עניינים", tint = Primary)
+    DisposableEffect(scrollKey) {
+        onDispose {
+            prefs.edit()
+                .putInt("${scrollKey}_idx", listState.firstVisibleItemIndex)
+                .putInt("${scrollKey}_off", listState.firstVisibleItemScrollOffset)
+                .apply()
+        }
+    }
+
+    LaunchedEffect(autoScrolling) {
+        if (!autoScrolling) return@LaunchedEffect
+        val msPerPx = (1000L / scrollSpeed.intValue.coerceAtLeast(1))
+        while (isActive && autoScrolling) {
+            delay(msPerPx)
+            listState.scroll { scrollBy(1f) }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            Surface(shadowElevation = 0.dp, color = Color(0xFFFDFBF7)) {
+                Column {
+                    Spacer(Modifier.statusBarsPadding())
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .padding(horizontal = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.Default.ArrowForward, contentDescription = "חזור", tint = Primary)
                         }
+                        Text(
+                            text = mamaar.title,
+                            modifier = Modifier.weight(1f),
+                            textAlign = TextAlign.Center,
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Primary,
+                            maxLines = 1
+                        )
+                        Spacer(Modifier.width(48.dp))
                     }
                 }
             }
-        }
-
-        // ── Content ──────────────────────────────────────────────────────────
-        ReaderBody(mamaar = mamaar, listState = listState)
-    }
-}
-
-@Composable
-private fun ReaderBody(mamaar: Mamaar, listState: LazyListState) {
-    LazyColumn(
-        state           = listState,
-        modifier        = Modifier.fillMaxSize(),
-        contentPadding  = PaddingValues(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        // Title block
-        item {
-            Text(
-                text       = mamaar.title,
-                fontSize   = 20.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = BaHaYetzira,
-                color      = Primary,
-                textAlign  = TextAlign.Center,
-                modifier   = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 8.dp)
-            )
-            HorizontalDivider(color = LineColor, modifier = Modifier.padding(bottom = 24.dp))
-        }
-
-        // Sections
-        itemsIndexed(mamaar.sections) { _, section ->
-            SectionBlock(section)
-            Spacer(Modifier.height(20.dp))
-        }
-
-        // Bottom padding for navigation bar
-        item { Spacer(Modifier.navigationBarsPadding()) }
-    }
-}
-
-@Composable
-private fun SectionBlock(section: MamaarSection) {
-    Column {
-        // Section heading (e.g. "ב) ויש לקשר…")
-        if (!section.heading.isNullOrBlank()) {
-            Text(
-                text       = section.heading,
-                fontSize   = 17.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = BaHaYetzira,
-                color      = Primary,
-                modifier   = Modifier.padding(bottom = 8.dp)
-            )
-        }
-
-        // Body paragraphs — split by newline so each is rendered as its own text block
-        val paragraphs = section.body
-            .split(Regex("\\n{1,}"))
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-
-        paragraphs.forEach { para ->
-            Text(
-                text      = para,
-                fontSize  = 17.sp,
-                fontFamily = BaHaYetzira,
-                color     = Ink,
-                lineHeight = 28.sp,
-                textAlign = TextAlign.Start,
-                modifier  = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp)
-            )
-        }
-    }
-}
-
-// ─── Table of Contents sheet ─────────────────────────────────────────────────
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun TocDrawer(
-    sections: List<MamaarSection>,
-    onDismiss: () -> Unit,
-    onJump: (Int) -> Unit
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Text(
-            text       = "תוכן עניינים",
-            modifier   = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp, vertical = 12.dp),
-            fontSize   = 18.sp,
-            fontWeight = FontWeight.Bold,
-            fontFamily = BaHaYetzira,
-            color      = Primary
-        )
-        HorizontalDivider(color = LineColor)
-
-        sections.forEachIndexed { idx, section ->
-            val label = when {
-                !section.heading.isNullOrBlank() -> section.heading
-                idx == 0 -> "פתיחה"
-                else     -> "פסקה ${idx + 1}"
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onJump(idx) }
-                    .padding(horizontal = 20.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
+        },
+        containerColor = Color(0xFFFDFBF7),
+        floatingActionButton = {
+            Button(
+                onClick = { autoScrolling = !autoScrolling },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.White.copy(alpha = 0.95f),
+                    contentColor = Primary
+                ),
+                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp),
+                shape = RoundedCornerShape(24.dp),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.1f)),
+                modifier = Modifier.height(48.dp).padding(bottom = 16.dp)
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .background(Primary.copy(alpha = 0.12f), RoundedCornerShape(6.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text("${idx + 1}", fontSize = 12.sp, color = Primary, fontWeight = FontWeight.Bold)
-                }
-                Spacer(Modifier.width(14.dp))
+                Icon(
+                    if (autoScrolling) Icons.Default.PauseCircle else Icons.Default.PlayCircle,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(Modifier.width(8.dp))
                 Text(
-                    text       = label,
-                    fontSize   = 15.sp,
-                    fontFamily = BaHaYetzira,
-                    color      = Ink,
-                    maxLines   = 2
+                    if (autoScrolling) "עצור גלילה" else "גלילה אוטומטית",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
                 )
             }
-            HorizontalDivider(color = LineColor.copy(alpha = 0.5f))
-        }
+        },
+        floatingActionButtonPosition = FabPosition.Center
+    ) { innerPadding ->
+        Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            LazyColumn(
+                state = listState,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 120.dp)
+            ) {
+                items(mamaar.sections) { section ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .absolutePadding(left = 12.dp, right = 16.dp)
+                    ) {
+                        MamaarSectionRow(section, fontSize.intValue)
+                    }
+                }
+            }
 
-        Spacer(Modifier.navigationBarsPadding())
+            if (mamaar.sections.isNotEmpty()) {
+                MamaarProgressBar(
+                    total = mamaar.sections.size,
+                    listState = listState,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun MamaarProgressBar(
+    total: Int,
+    listState: LazyListState,
+    modifier: Modifier = Modifier
+) {
+    val firstVisible by remember { derivedStateOf { listState.firstVisibleItemIndex } }
+    val progress by remember {
+        derivedStateOf {
+            if (total > 1) (firstVisible.toFloat() / (total - 1).toFloat()).coerceIn(0f, 1f)
+            else 0f
+        }
+    }
+
+    Canvas(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(5.dp)
+            .background(Color(0xFFE5E7EB))
+    ) {
+        drawRect(color = Primary, size = size.copy(width = size.width * progress))
+    }
+}
+
+@Composable
+private fun MamaarSectionRow(section: MamaarSection, fontSize: Int) {
+    val paragraphs = section.body
+        .split(Regex("\\n{1,}"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+
+    if (paragraphs.isEmpty()) return
+
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+        // פסקה ראשונה: אם יש כותרת סעיף — מוטמעת inline בצבע ירוק בדיוק כמו HalachaRow
+        val firstPara = buildAnnotatedString {
+            if (!section.heading.isNullOrBlank()) {
+                withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold, fontSize = (fontSize + 2).sp)) {
+                    append(section.heading + "\u00A0")
+                }
+            }
+            append(paragraphs.first())
+        }
+        Text(
+            text = firstPara,
+            fontSize = fontSize.sp,
+            fontFamily = SblHebrew,
+            color = Color.Black,
+            lineHeight = (fontSize * 1.8f).sp,
+            textAlign = TextAlign.Justify,
+            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+        )
+
+        // שאר הפסקאות — שחור אחיד
+        paragraphs.drop(1).forEach { para ->
+            Text(
+                text = para,
+                fontSize = fontSize.sp,
+                fontFamily = SblHebrew,
+                color = Color.Black,
+                lineHeight = (fontSize * 1.8f).sp,
+                textAlign = TextAlign.Justify,
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+            )
+        }
     }
 }

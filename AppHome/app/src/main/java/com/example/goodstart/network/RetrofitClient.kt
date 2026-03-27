@@ -8,17 +8,22 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
     private const val BASE_URL = "https://shieor.onrender.com/"
 
-    val studyService: StudyService by lazy {
-        val client = OkHttpClient.Builder()
+    private val client by lazy {
+        OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .writeTimeout(60, TimeUnit.SECONDS)
             .build()
+    }
+
+    private val retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(StudyService::class.java)
     }
+
+    val studyService:  StudyService  by lazy { retrofit.create(StudyService::class.java)  }
+    val zmanimService: ZmanimService by lazy { retrofit.create(ZmanimService::class.java) }
 }

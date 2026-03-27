@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 data class MamaarimState(
     val mamaarim: List<Mamaar> = emptyList(),
@@ -47,7 +48,7 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
                             title = dto.title,
                             fileName = "",
                             sections = emptyList(), // Not fetched yet
-                            createdAt = dto.createdAt ?: System.currentTimeMillis()
+                            createdAt = parseDate(dto.createdAt)
                         )
                     }
                     _state.update { it.copy(mamaarim = list, isLoading = false) }
@@ -75,7 +76,7 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
                         title = dto.title,
                         fileName = "",
                         sections = sections,
-                        createdAt = dto.createdAt ?: System.currentTimeMillis()
+                        createdAt = parseDate(dto.createdAt)
                     )
                     _selectedMamaar.value = mamaar
                 } else {
@@ -92,6 +93,15 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun clearError() = _state.update { it.copy(error = null) }
+
+    private fun parseDate(iso: String?): Long {
+        if (iso == null) return System.currentTimeMillis()
+        return try {
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                .apply { timeZone = TimeZone.getTimeZone("UTC") }
+                .parse(iso)?.time ?: System.currentTimeMillis()
+        } catch (_: Exception) { System.currentTimeMillis() }
+    }
 
     // ─── Helper for splitting ────────────────────────────────────────────────
     private fun splitIntoSections(text: String): List<MamaarSection> {

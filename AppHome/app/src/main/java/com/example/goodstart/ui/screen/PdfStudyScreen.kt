@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -198,19 +199,43 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    // גלילה בין עמודים + זום — ללא ripple
                     .pointerInput(Unit) {
+                        var swipeAccX = 0f
                         detectTransformGestures { _, pan, zoom, _ ->
-                            scale = (scale * zoom).coerceIn(1f, 5f)
-                            if (scale > 1f) {
+                            if (zoom != 1f) {
+                                // מחווה של זום
+                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                if (scale > 1f) {
+                                    offsetX += pan.x
+                                    offsetY += pan.y
+                                }
+                                swipeAccX = 0f
+                            } else if (scale > 1f) {
+                                // גרירה כשמוזם
                                 offsetX += pan.x
                                 offsetY += pan.y
+                                swipeAccX = 0f
                             } else {
-                                offsetX = 0f
-                                offsetY = 0f
+                                // החלקה לשינוי עמוד (scale = 1)
+                                // ב-RTL: ימינה = עמוד קודם, שמאלה = עמוד הבא
+                                swipeAccX += pan.x
+                                if (swipeAccX > 120f) {
+                                    vm.nextPage()
+                                    scale = 1f; offsetX = 0f; offsetY = 0f
+                                    swipeAccX = 0f
+                                } else if (swipeAccX < -120f) {
+                                    vm.prevPage()
+                                    scale = 1f; offsetX = 0f; offsetY = 0f
+                                    swipeAccX = 0f
+                                }
                             }
                         }
                     }
-                    .clickable { showControls = !showControls },
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() }
+                    ) { showControls = !showControls },
                 contentAlignment = Alignment.Center
             ) {
                 if (state.currentBitmap != null) {
@@ -267,28 +292,30 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // ב-RTL: הראשון בשורה מופיע מימין — עמוד קודם (ימין = אחורה בעברית)
                     FilledIconButton(
-                        onClick = { 
-                            vm.nextPage() 
-                            scale = 1f; offsetX = 0f; offsetY = 0f
-                        },
-                        enabled = currentBook.currentPage < currentBook.totalPages - 1,
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = Primary)
-                    ) {
-                        Icon(Icons.Default.ChevronLeft, "Next Page", tint = Color.White)
-                    }
-
-                    Text("עמוד ${currentBook.currentPage + 1}", color = Color.White, fontSize = 16.sp)
-
-                    FilledIconButton(
-                        onClick = { 
-                            vm.prevPage() 
+                        onClick = {
+                            vm.prevPage()
                             scale = 1f; offsetX = 0f; offsetY = 0f
                         },
                         enabled = currentBook.currentPage > 0,
                         colors = IconButtonDefaults.filledIconButtonColors(containerColor = Primary)
                     ) {
                         Icon(Icons.Default.ChevronRight, "Prev Page", tint = Color.White)
+                    }
+
+                    Text("עמוד ${currentBook.currentPage + 1}", color = Color.White, fontSize = 16.sp)
+
+                    // האחרון בשורה מופיע משמאל — עמוד הבא (שמאל = קדימה בעברית)
+                    FilledIconButton(
+                        onClick = {
+                            vm.nextPage()
+                            scale = 1f; offsetX = 0f; offsetY = 0f
+                        },
+                        enabled = currentBook.currentPage < currentBook.totalPages - 1,
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = Primary)
+                    ) {
+                        Icon(Icons.Default.ChevronLeft, "Next Page", tint = Color.White)
                     }
                 }
             }

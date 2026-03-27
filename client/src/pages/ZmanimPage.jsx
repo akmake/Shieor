@@ -2,69 +2,128 @@ import { useState, useEffect } from 'react';
 import { Clock, MapPin } from 'lucide-react';
 
 const CITIES = [
-  { label: 'תל אביב', geonameid: 293397 },
-  { label: 'ירושלים', geonameid: 281184 },
-  { label: 'חיפה',    geonameid: 294801 },
-  { label: 'באר שבע', geonameid: 1024898 },
+  { label: 'תל אביב', locationId: 531  },
+  { label: 'ירושלים', locationId: 247  },
+  { label: 'חיפה',    locationId: 689  },
+  { label: 'באר שבע', locationId: 688  },
 ];
 
-const ZMANIM = [
-  { key: 'alotHaShachar',     label: 'עלות השחר' },
-  { key: 'misheyakir',        label: 'משיכיר' },
-  { key: 'sunrise',           label: 'הנץ החמה' },
-  { key: 'sofZmanShmaMGA',    label: 'סוף זמן ק"ש (מג"א)' },
-  { key: 'sofZmanShma',       label: 'סוף זמן ק"ש (גר"א)' },
-  { key: 'sofZmanTfillaMGA',  label: 'סוף זמן תפילה (מג"א)' },
-  { key: 'sofZmanTfilla',     label: 'סוף זמן תפילה (גר"א)' },
-  { key: 'chatzot',           label: 'חצות היום' },
-  { key: 'minchaGedola',      label: 'מנחה גדולה' },
-  { key: 'minchaKetana',      label: 'מנחה קטנה' },
-  { key: 'plagHaMincha',      label: 'פלג המנחה' },
-  { key: 'sunset',            label: 'שקיעת החמה' },
-  { key: 'beinHaShmashos',    label: 'בין השמשות' },
-  { key: 'tzeit',             label: 'צאת הכוכבים' },
-  { key: 'chatzotNight',      label: 'חצות הלילה' },
+// מיפוי סוגי זמנים מחבד לתצוגה
+const ZMANIM_ORDER = [
+  { type: 'AlosHashachar',    label: 'עלות השחר'     },
+  { type: 'EarliestTefillin', label: 'משיכיר'         },
+  { type: 'NetzHachamah',     label: 'הנץ החמה'       },
+  { type: 'LatestShema',      label: 'סוף זמן ק"ש'    },
+  { type: 'LatestTefillah',   label: 'סוף זמן תפילה'  },
+  { type: 'Chatzos',          label: 'חצות היום'      },
+  { type: 'MinchahGedolah',   label: 'מנחה גדולה'     },
+  { type: 'MinchahKetanah',   label: 'מנחה קטנה'      },
+  { type: 'PlagHaminchah',    label: 'פלג המנחה'      },
+  { type: 'CandleLighting',   label: 'הדלקת נרות'     },
+  { type: 'Shkiah',           label: 'שקיעת החמה'     },
+  { type: 'Tzeis',            label: 'צאת הכוכבים'    },
+  { type: 'ChatzosNight',     label: 'חצות הלילה'     },
 ];
+
+const CACHE_TTL_MS  = 30 * 24 * 60 * 60 * 1000; // 30 יום
+const CACHE_VERSION = 'v1';
 
 function todayISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-function formatTime(isoString) {
-  if (!isoString) return null;
-  const d = new Date(isoString);
-  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', hour12: false });
+function addDays(dateStr, n) {
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
 }
 
 function formatDateHebrew(dateStr) {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('he-IL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  return new Date(y, m - 1, d).toLocaleDateString('he-IL', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+  });
 }
 
-export default function ZmanimPage() {
-  const [cityIdx, setCityIdx] = useState(0);
-  const [date, setDate] = useState(todayISO());
-  const [times, setTimes] = useState(null);
-  const [hebrewDate, setHebrewDate] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+// ── Cache helpers ─────────────────────────────────────────────────────────────
+function cacheKey(locationId) {
+  return `chabad_zmanim_${CACHE_VERSION}_${locationId}`;
+}
 
+function readCache(locationId) {
+  try {
+    const raw = localStorage.getItem(cacheKey(locationId));
+    if (!raw) return null;
+    const { savedAt, days } = JSON.parse(raw);
+    if (Date.now() - savedAt > CACHE_TTL_MS) return null;
+    return days; // { 'YYYY-MM-DD': [ {type, time}, ... ] }
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(locationId, days) {
+  try {
+    localStorage.setItem(cacheKey(locationId), JSON.stringify({ savedAt: Date.now(), days }));
+  } catch { /* localStorage מלא */ }
+}
+
+// ── Fetch מהשרת (30 ימים) ────────────────────────────────────────────────────
+async function fetchFromServer(locationId, from, to) {
+  const res = await fetch(`/api/zmanim?locationId=${locationId}&from=${from}&to=${to}`);
+  if (!res.ok) throw new Error(`שגיאת שרת ${res.status}`);
+  const docs = await res.json();
+  // הופך מ-array ל-map לפי תאריך
+  const map = {};
+  docs.forEach(doc => { map[doc.date] = doc.zmanim; });
+  return map;
+}
+
+// ── קומפוננטה ─────────────────────────────────────────────────────────────────
+export default function ZmanimPage() {
+  const [cityIdx, setCityIdx]     = useState(0);
+  const [date, setDate]           = useState(todayISO());
+  const [zmanimMap, setZmanimMap] = useState(null); // cache ב-state
+  const [loading, setLoading]     = useState(false);
+  const [error, setError]         = useState('');
+
+  const city = CITIES[cityIdx];
+
+  // כשמשתנה עיר — טוען מ-cache או מהשרת
   useEffect(() => {
-    const city = CITIES[cityIdx];
-    setLoading(true);
-    setError('');
-    setTimes(null);
-    fetch(`https://www.hebcal.com/zmanim?cfg=json&geonameid=${city.geonameid}&date=${date}`)
-      .then(r => r.json())
-      .then(data => {
-        setTimes(data.times || {});
-        setHebrewDate(data.date?.hebrew || '');
-      })
-      .catch(() => setError('שגיאה בטעינת הזמנים, נסה שוב'))
-      .finally(() => setLoading(false));
-  }, [cityIdx, date]);
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError('');
+      setZmanimMap(null);
+
+      // בדוק cache
+      let cached = readCache(city.locationId);
+      if (!cached) {
+        try {
+          const from = todayISO();
+          const to   = addDays(from, 30);
+          cached = await fetchFromServer(city.locationId, from, to);
+          writeCache(city.locationId, cached);
+        } catch (err) {
+          if (!cancelled) setError('שגיאה בטעינת הזמנים');
+          setLoading(false);
+          return;
+        }
+      }
+
+      if (!cancelled) {
+        setZmanimMap(cached);
+        setLoading(false);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [city.locationId]);
+
+  // הזמנים ליום הנבחר
+  const todayZmanim = zmanimMap?.[date] ?? null;
 
   return (
     <div className="min-h-screen bg-white" dir="rtl">
@@ -78,16 +137,15 @@ export default function ZmanimPage() {
             </div>
           </div>
           <h1 className="text-2xl font-bold text-[var(--ink)]">זמנים הלכתיים</h1>
-          {hebrewDate && <p className="mt-1 text-sm text-[var(--muted)]">{hebrewDate}</p>}
+          <p className="mt-1 text-xs text-[var(--muted)]">לפי שיטת אדמו"ר הזקן · Chabad.org</p>
         </div>
 
         {/* Controls */}
         <div className="mb-6 flex flex-col gap-3 sm:flex-row">
-          {/* City selector */}
           <div className="flex flex-1 gap-2">
-            {CITIES.map((city, i) => (
+            {CITIES.map((c, i) => (
               <button
-                key={city.geonameid}
+                key={c.locationId}
                 onClick={() => setCityIdx(i)}
                 className={`flex-1 rounded-full py-2 text-sm font-medium transition ${
                   cityIdx === i
@@ -95,11 +153,10 @@ export default function ZmanimPage() {
                     : 'border border-[var(--line)] text-[var(--muted)] hover:bg-gray-50 hover:text-[var(--ink)]'
                 }`}
               >
-                {city.label}
+                {c.label}
               </button>
             ))}
           </div>
-          {/* Date picker */}
           <input
             type="date"
             value={date}
@@ -111,7 +168,7 @@ export default function ZmanimPage() {
         {/* Location badge */}
         <div className="mb-4 flex items-center gap-1.5 text-sm text-[var(--muted)]">
           <MapPin size={14} />
-          <span>{CITIES[cityIdx].label} · {formatDateHebrew(date)}</span>
+          <span>{city.label} · {formatDateHebrew(date)}</span>
         </div>
 
         {/* Content */}
@@ -125,25 +182,34 @@ export default function ZmanimPage() {
           <div className="rounded-2xl bg-red-50 p-4 text-center text-sm text-red-600">{error}</div>
         )}
 
-        {!loading && !error && times && (
+        {!loading && !error && todayZmanim === null && zmanimMap && (
+          <div className="rounded-2xl bg-yellow-50 p-4 text-center text-sm text-yellow-700">
+            אין נתונים לתאריך זה — בחר תאריך בטווח 30 הימים הקרובים
+          </div>
+        )}
+
+        {!loading && !error && todayZmanim && (
           <div className="overflow-hidden rounded-3xl border border-[var(--line)] bg-white shadow-sm">
-            {ZMANIM.map(({ key, label }, i) => {
-              const val = formatTime(times[key]);
-              if (!val) return null;
+            {ZMANIM_ORDER.map(({ type, label }, i) => {
+              const zman = todayZmanim.find(z => z.type === type);
+              if (!zman) return null;
               return (
                 <div
-                  key={key}
+                  key={type}
                   className={`flex items-center justify-between px-5 py-3.5 ${
                     i !== 0 ? 'border-t border-[var(--line)]' : ''
                   }`}
                 >
                   <span className="text-base text-[var(--ink)]">{label}</span>
-                  <span className="font-mono text-base font-semibold tabular-nums text-[var(--ink)]">{val}</span>
+                  <span className="font-mono text-base font-semibold tabular-nums text-[var(--ink)]">
+                    {zman.time}
+                  </span>
                 </div>
               );
             })}
           </div>
         )}
+
       </div>
     </div>
   );

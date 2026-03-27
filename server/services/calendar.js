@@ -84,19 +84,48 @@ function hebrewChapterEntries(hebrewName) {
   return [hebrewName];
 }
 
+// Condenses 3 chapter entries into a compact label.
+// e.g. ["הלכות שבת פרק כח","הלכות שבת פרק כט","הלכות שבת פרק ל"]
+//   → "הלכות שבת פרקים כח-ל"
+// e.g. ["הלכות שבת פרק ל","הלכות ערובין פרק א","הלכות ערובין פרק ב"]
+//   → "הלכות שבת פרק ל, הלכות ערובין פרקים א-ב"
+function condenseRambamLabel(entries) {
+  if (!entries || entries.length === 0) return '';
+
+  const parsed = entries.map(e => {
+    const m = e?.match(/^(.+?)\s+פרק\s+(\S+)$/);
+    return m ? { book: m[1], ordinal: m[2] } : { book: e || '', ordinal: '' };
+  });
+
+  const groups = [];
+  for (const item of parsed) {
+    const last = groups[groups.length - 1];
+    if (last && last.book === item.book) {
+      last.ordinals.push(item.ordinal);
+    } else {
+      groups.push({ book: item.book, ordinals: [item.ordinal] });
+    }
+  }
+
+  return groups.map(g => {
+    if (g.ordinals.length === 1) return `${g.book} פרק ${g.ordinals[0]}`;
+    return `${g.book} פרקים ${g.ordinals[0]}-${g.ordinals[g.ordinals.length - 1]}`;
+  }).join(', ');
+}
+
 function nameToChapterRefs(name) {
   if (!name) return [];
-  const rangeMatch = name.match(/^(.+)\s+(\d+)-(\d+)$/);
-  if (rangeMatch) {
-    const book = rangeMatch[1];
-    const start = parseInt(rangeMatch[2], 10);
-    const end   = parseInt(rangeMatch[3], 10);
-    return Array.from({ length: end - start + 1 }, (_, i) => `Mishneh Torah, ${book}.${start + i}`);
-  }
-  return name.split(', ').map(entry => {
-    const m = entry.match(/^(.+)\s+(\d+)$/);
-    return m ? `Mishneh Torah, ${m[1]}.${m[2]}` : null;
-  }).filter(Boolean);
+  // Split by comma first, then handle each part (single chapter or range).
+  // This correctly handles cross-book entries like "Sabbath 30, Eruvin 1-2".
+  return name.split(', ').flatMap(entry => {
+    const rangeM = entry.match(/^(.+?)\s+(\d+)-(\d+)$/);
+    if (rangeM) {
+      const book = rangeM[1], start = parseInt(rangeM[2], 10), end = parseInt(rangeM[3], 10);
+      return Array.from({ length: end - start + 1 }, (_, i) => `Mishneh Torah, ${book}.${start + i}`);
+    }
+    const m = entry.match(/^(.+?)\s+(\d+)$/);
+    return m ? [`Mishneh Torah, ${m[1]}.${m[2]}`] : [];
+  });
 }
 
 function seferHamitzvotNameToRef(name) {
@@ -181,10 +210,11 @@ export async function getDailyCalendar(dateString) {
       // Build Hebrew label from the actual 3 chapters being shown (Chabad alignment).
       const yesterdayHe = hebrewChapterEntries(r3Yest?.hebrewName);
       const todayHe     = hebrewChapterEntries(r3Today?.hebrewName);
-      const displayHe   = [
+      const rawEntries  = [
         yesterdayHe[yesterdayHe.length - 1],
         ...todayHe.slice(0, 2),
-      ].filter(Boolean).join(', ');
+      ].filter(Boolean);
+      const displayHe   = condenseRambamLabel(rawEntries);
 
       console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYesterday} | label="${displayHe}"`);
       items.push({
@@ -210,13 +240,32 @@ export async function getDailyCalendar(dateString) {
   }
 
   // ── 2. Parasha (Chumash + Shnayim Mikra) from Hebcal ──────────────────────
+  // If the upcoming Shabbat has no regular Torah reading (e.g. Pesach, Yom Tov),
+  // skip ahead week by week until a regular parashat is found (max 4 attempts).
   try {
-    const shabbat = toShabbatDate(dateString);
-    console.log(`[calendar] Hebcal shabbat date: ${shabbat} (for ${dateString})`);
-    const hc = await fetchJson(
-      `${HEBCAL_BASE}/shabbat?cfg=json&geonameid=281184&M=on&lg=he&leyning=on&dt=${shabbat}`
-    );
-    const parashat = (hc?.items || []).find(i => i.category === 'parashat');
+    const baseShabbat = toShabbatDate(dateString);
+    const [bsy, bsm, bsd] = baseShabbat.split('-').map(Number);
+    let parashat = null;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const shabbat = new Date(Date.UTC(bsy, bsm - 1, bsd + attempt * 7))
+        .toISOString().slice(0, 10);
+      console.log(`[calendar] Hebcal attempt ${attempt + 1}: shabbat=${shabbat} (for ${dateString})`);
+      try {
+        const hc = await fetchJson(
+          `${HEBCAL_BASE}/shabbat?cfg=json&geonameid=281184&M=on&lg=he&leyning=on&dt=${shabbat}`
+        );
+        const found = (hc?.items || []).find(i => i.category === 'parashat');
+        if (found?.leyning) {
+          parashat = found;
+          break;
+        }
+        console.log(`[calendar] No parashat on ${shabbat}, trying next week`);
+      } catch (innerErr) {
+        console.error(`[calendar] Hebcal attempt ${attempt + 1} failed:`, innerErr.message);
+      }
+    }
+
     if (parashat?.leyning) {
       const { leyning } = parashat;
       // 0-indexed aliyot array: index 0 = Sunday = leyning["1"], … index 6 = Shabbat = leyning["7"]

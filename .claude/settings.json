@@ -9,7 +9,8 @@
       "Bash(python -c \"import fitz; print\\(''ok''\\)\")",
       "Bash(python -c \"from pdfminer.high_level import extract_text_to_fp; print\\(''''ok''''\\)\")",
       "Read(//c/Users/yosef/Downloads/**)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "WebFetch(domain:www.mishor.co.il)"
     ]
   }
 }

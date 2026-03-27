@@ -7,5 +7,5 @@ data class ArticleDto(
     val id: String,
     val title: String,
     val rawText: String?,
-    val createdAt: Long?
+    val createdAt: String?
 )
