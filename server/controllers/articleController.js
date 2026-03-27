@@ -1,4 +1,18 @@
+import { createRequire } from 'module';
 import Article from '../models/Article.js';
+
+const require = createRequire(import.meta.url);
+const pdfParse = require('pdf-parse');
+
+export const extractArticle = async (req, res, next) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'לא הועלה קובץ PDF' });
+    const data = await pdfParse(req.file.buffer);
+    res.json({ rawText: data.text?.trim() || '', pageCount: data.numpages });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const uploadArticle = async (req, res, next) => {
   try {

@@ -1,6 +1,6 @@
 import express from 'express';
 import multer from 'multer';
-import { uploadArticle, getArticles, getArticleById, deleteArticle, updateArticle } from '../controllers/articleController.js';
+import { extractArticle, uploadArticle, getArticles, getArticleById, deleteArticle, updateArticle } from '../controllers/articleController.js';
 
 const router = express.Router();
 
@@ -13,7 +13,8 @@ const upload = multer({
   },
 });
 
-router.post('/upload', upload.single('pdf'), uploadArticle);
+router.post('/extract', upload.single('pdf'), extractArticle);
+router.post('/upload',  upload.single('pdf'), uploadArticle);
 router.get('/', getArticles);
 router.get('/:id', getArticleById);
 router.put('/:id', updateArticle);
