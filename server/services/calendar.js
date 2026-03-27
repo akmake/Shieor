@@ -256,11 +256,12 @@ export async function getDailyCalendar(dateString) {
           `${HEBCAL_BASE}/shabbat?cfg=json&geonameid=281184&M=on&lg=he&leyning=on&dt=${shabbat}`
         );
         const found = (hc?.items || []).find(i => i.category === 'parashat');
-        if (found?.leyning) {
+        // Require all 7 aliyot — Yom Tov special readings have only 4-5.
+        if (found?.leyning && found.leyning['7']) {
           parashat = found;
           break;
         }
-        console.log(`[calendar] No parashat on ${shabbat}, trying next week`);
+        console.log(`[calendar] No regular parashat on ${shabbat} (found=${!!found}, has7=${!!(found?.leyning?.['7'])}), trying next week`);
       } catch (innerErr) {
         console.error(`[calendar] Hebcal attempt ${attempt + 1} failed:`, innerErr.message);
       }

@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.goodstart.network.RetrofitClient
+import com.example.goodstart.util.ChabadPdfExtractor
+import com.tom_roush.pdfbox.pdmodel.PDDocument
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,6 +15,8 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+
+enum class ExtractionMode { SERVER, LOCAL }
 
 sealed class UploadState {
     object Idle        : UploadState()
@@ -28,29 +32,27 @@ class ArticleUploadViewModel(app: Application) : AndroidViewModel(app) {
     private val _state = MutableStateFlow<UploadState>(UploadState.Idle)
     val state = _state.asStateFlow()
 
-    var title = MutableStateFlow("")
+    val title          = MutableStateFlow("")
+    val extractionMode = MutableStateFlow(ExtractionMode.SERVER)
 
     fun onPdfPicked(uri: Uri) {
         _state.value = UploadState.Extracting
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val ctx         = getApplication<Application>()
-                val inputStream = ctx.contentResolver.openInputStream(uri)
+                val ctx   = getApplication<Application>()
+                val bytes = ctx.contentResolver.openInputStream(uri)
+                    ?.use { it.readBytes() }
                     ?: throw Exception("לא ניתן לפתוח את הקובץ")
-                val bytes       = inputStream.use { it.readBytes() }
 
-                val pdfPart = MultipartBody.Part.createFormData(
-                    name     = "pdf",
-                    filename = "upload.pdf",
-                    body     = bytes.toRequestBody("application/pdf".toMediaType())
-                )
+                val (rawText, pageCount) = when (extractionMode.value) {
+                    ExtractionMode.SERVER -> extractViaServer(bytes)
+                    ExtractionMode.LOCAL  -> extractLocally(bytes)
+                }
 
-                val response = RetrofitClient.articleUploadService.extractText(pdfPart)
-
-                if (response.rawText.isBlank()) {
+                if (rawText.isBlank()) {
                     _state.value = UploadState.Error("לא נמצא טקסט בקובץ")
                 } else {
-                    _state.value = UploadState.Preview(response.rawText, response.pageCount, uri)
+                    _state.value = UploadState.Preview(rawText, pageCount, uri)
                 }
             } catch (e: Exception) {
                 _state.value = UploadState.Error("שגיאה בחילוץ הטקסט: ${e.message}")
@@ -58,20 +60,36 @@ class ArticleUploadViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private suspend fun extractViaServer(bytes: ByteArray): Pair<String, Int> {
+        val pdfPart = MultipartBody.Part.createFormData(
+            name     = "pdf",
+            filename = "upload.pdf",
+            body     = bytes.toRequestBody("application/pdf".toMediaType())
+        )
+        val response = RetrofitClient.articleUploadService.extractText(pdfPart)
+        return Pair(response.rawText, response.pageCount)
+    }
+
+    private fun extractLocally(bytes: ByteArray): Pair<String, Int> {
+        val document = PDDocument.load(bytes)
+        val result   = ChabadPdfExtractor().extract(document)
+        document.close()
+        return result
+    }
+
     fun upload() {
         val preview = _state.value as? UploadState.Preview ?: return
         _state.value = UploadState.Uploading
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val ctx         = getApplication<Application>()
-                val inputStream = ctx.contentResolver.openInputStream(preview.pdfUri)
+                val ctx   = getApplication<Application>()
+                val bytes = ctx.contentResolver.openInputStream(preview.pdfUri)
+                    ?.use { it.readBytes() }
                     ?: throw Exception("לא ניתן לפתוח את הקובץ")
-                val bytes = inputStream.use { it.readBytes() }
 
-                val pdfPart = MultipartBody.Part.createFormData(
-                    name     = "pdf",
-                    filename = "upload.pdf",
-                    body     = bytes.toRequestBody("application/pdf".toMediaType())
+                val pdfPart       = MultipartBody.Part.createFormData(
+                    name = "pdf", filename = "upload.pdf",
+                    body = bytes.toRequestBody("application/pdf".toMediaType())
                 )
                 val textType      = "text/plain".toMediaType()
                 val rawTextBody   = preview.rawText.toRequestBody(textType)

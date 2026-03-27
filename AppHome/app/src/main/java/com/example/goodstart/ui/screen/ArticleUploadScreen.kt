@@ -2,13 +2,14 @@ package com.example.goodstart.ui.screen
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.goodstart.ui.theme.*
 import com.example.goodstart.ui.viewmodel.ArticleUploadViewModel
+import com.example.goodstart.ui.viewmodel.ExtractionMode
 import com.example.goodstart.ui.viewmodel.UploadState
 
 @Composable
@@ -30,8 +32,9 @@ fun ArticleUploadScreen(
     onSuccess: () -> Unit,
     vm: ArticleUploadViewModel = viewModel()
 ) {
-    val state by vm.state.collectAsState()
-    val title by vm.title.collectAsState()
+    val state          by vm.state.collectAsState()
+    val title          by vm.title.collectAsState()
+    val extractionMode by vm.extractionMode.collectAsState()
 
     // ניווט אחרי הצלחה
     LaunchedEffect(state) {
@@ -93,10 +96,10 @@ fun ArticleUploadScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Icon(
-                            imageVector     = Icons.Default.UploadFile,
+                            imageVector        = Icons.Default.UploadFile,
                             contentDescription = null,
-                            tint            = Primary.copy(alpha = 0.4f),
-                            modifier        = Modifier.size(80.dp)
+                            tint               = Primary.copy(alpha = 0.4f),
+                            modifier           = Modifier.size(80.dp)
                         )
                         Spacer(Modifier.height(24.dp))
                         Text(
@@ -106,7 +109,48 @@ fun ArticleUploadScreen(
                             fontFamily = BaHaYetzira,
                             textAlign  = TextAlign.Center
                         )
-                        Spacer(Modifier.height(32.dp))
+                        Spacer(Modifier.height(28.dp))
+
+                        // ── בחירת שיטת חילוץ ──────────────────────────────────
+                        Text(
+                            text     = "שיטת חילוץ טקסט:",
+                            fontSize = 13.sp,
+                            color    = Muted
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            listOf(
+                                ExtractionMode.SERVER to Pair(Icons.Default.Cloud,        "שרת"),
+                                ExtractionMode.LOCAL  to Pair(Icons.Default.PhoneAndroid, "מכשיר")
+                            ).forEach { (mode, iconLabel) ->
+                                val selected = extractionMode == mode
+                                OutlinedButton(
+                                    onClick = { vm.extractionMode.value = mode },
+                                    shape   = RoundedCornerShape(10.dp),
+                                    colors  = ButtonDefaults.outlinedButtonColors(
+                                        containerColor = if (selected) Primary else Color.Transparent,
+                                        contentColor   = if (selected) Color.White else Primary
+                                    )
+                                ) {
+                                    Icon(iconLabel.first, contentDescription = null, modifier = Modifier.size(16.dp))
+                                    Spacer(Modifier.width(6.dp))
+                                    Text(iconLabel.second, fontSize = 14.sp)
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            text     = if (extractionMode == ExtractionMode.SERVER)
+                                "מדויק יותר · דורש חיבור לאינטרנט"
+                            else
+                                "עובד ללא אינטרנט · עיבוד במכשיר",
+                            fontSize = 12.sp,
+                            color    = Muted,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(Modifier.height(28.dp))
                         Button(
                             onClick = { pdfPicker.launch("application/pdf") },
                             colors  = ButtonDefaults.buttonColors(containerColor = Primary),

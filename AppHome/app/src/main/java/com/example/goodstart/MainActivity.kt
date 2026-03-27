@@ -8,6 +8,7 @@ import androidx.core.view.WindowCompat
 import com.example.goodstart.network.StudySyncWorker
 import com.example.goodstart.ui.navigation.AppNavGraph
 import com.example.goodstart.ui.theme.ShieorTheme
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
 class MainActivity : ComponentActivity() {
     companion object {
@@ -17,7 +18,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
-        // Start background sync for study materials
+        PDFBoxResourceLoader.init(this)
         StudySyncWorker.enqueue(this)
 
         enableEdgeToEdge()
