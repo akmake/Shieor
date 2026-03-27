@@ -30,8 +30,9 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MamaarimScreen(
-    onBack: () -> Unit,
-    onOpen: (String) -> Unit,
+    onBack:    () -> Unit,
+    onOpen:    (String) -> Unit,
+    onUpload:  () -> Unit = {},
     vm: MamaarimViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
@@ -47,6 +48,16 @@ fun MamaarimScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackHost) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick           = onUpload,
+                containerColor    = Primary,
+                contentColor      = Color.White,
+                shape             = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "העלה מאמר")
+            }
+        },
         topBar = {
             Surface(shadowElevation = 2.dp, color = Color.White) {
                 Column {

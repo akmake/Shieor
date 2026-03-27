@@ -72,8 +72,18 @@ fun AppNavGraph() {
         // ── מאמרים — האזור החדש (חילוץ טקסט) ──────────────────────────────
         composable("mamaarim") {
             MamaarimScreen(
-                onBack = { nav.popBackStack() },
-                onOpen = { id -> nav.navigate("mamaarReader/$id") }
+                onBack   = { nav.popBackStack() },
+                onOpen   = { id -> nav.navigate("mamaarReader/$id") },
+                onUpload = { nav.navigate("uploadArticle") }
+            )
+        }
+
+        composable("uploadArticle") {
+            ArticleUploadScreen(
+                onBack    = { nav.popBackStack() },
+                onSuccess = {
+                    nav.popBackStack()
+                }
             )
         }
 
