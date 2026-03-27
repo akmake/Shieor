@@ -38,6 +38,23 @@ export const extractArticle = async (req, res, next) => {
   }
 };
 
+// Text-only save (no PDF upload needed — used by Android local extraction)
+export const saveArticleText = async (req, res, next) => {
+  try {
+    const { title, rawText, pageCount } = req.body;
+    if (!rawText?.trim()) return res.status(422).json({ message: 'חסר טקסט' });
+    const article = await Article.create({
+      title:            title?.trim() || 'מאמר חדש',
+      originalFilename: '',
+      rawText:          rawText.trim(),
+      pageCount:        parseInt(pageCount) || 0,
+    });
+    res.status(201).json(article);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const uploadArticle = async (req, res, next) => {
   try {
     if (!req.file) {
