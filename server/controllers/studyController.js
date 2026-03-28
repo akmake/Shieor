@@ -81,16 +81,32 @@ const STUDY_CONFIG = {
   },
 };
 
-const HEBREW_ORDINALS = [
-  "", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
-  "יא", "יב", "יג", "יד", "טו", "טז", "יז", "יח", "יט", "כ",
-  "כא", "כב", "כג", "כד", "כה", "כו", "כז", "כח", "כט", "ל",
-  "לא", "לב", "לג", "לד", "לה", "לו", "לז", "לח", "לט", "מ"
-];
-
 function getHebrewOrdinal(n) {
-  if (n >= 1 && n < HEBREW_ORDINALS.length) return HEBREW_ORDINALS[n];
-  return String(n);
+  if (n <= 0) return String(n);
+  let h = '';
+  let temp = n;
+  if (temp >= 400) { h += 'ת'; temp -= 400; }
+  if (temp >= 300) { h += 'ש'; temp -= 300; }
+  if (temp >= 200) { h += 'ר'; temp -= 200; }
+  if (temp >= 100) { h += 'ק'; temp -= 100; }
+  
+  if (temp === 15) return h + 'טו';
+  if (temp === 16) return h + 'טז';
+  
+  if (temp >= 90) { h += 'צ'; temp -= 90; }
+  else if (temp >= 80) { h += 'פ'; temp -= 80; }
+  else if (temp >= 70) { h += 'ע'; temp -= 70; }
+  else if (temp >= 60) { h += 'ס'; temp -= 60; }
+  else if (temp >= 50) { h += 'נ'; temp -= 50; }
+  else if (temp >= 40) { h += 'מ'; temp -= 40; }
+  else if (temp >= 30) { h += 'ל'; temp -= 30; }
+  else if (temp >= 20) { h += 'כ'; temp -= 20; }
+  else if (temp >= 10) { h += 'י'; temp -= 10; }
+  
+  const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+  if (temp > 0) h += ones[temp];
+  
+  return h;
 }
 
 function parseStartChapter(ref) {
