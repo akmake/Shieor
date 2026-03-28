@@ -170,10 +170,18 @@ class PdfStudyViewModel(app: Application) : AndroidViewModel(app) {
 
                 val page = currentPdfPage
                 if (page != null) {
-                    val width = (ctx.resources.displayMetrics.widthPixels * 3).toInt()
-                    val height = (width * page.height / page.width)
+                    val screenWidth = ctx.resources.displayMetrics.widthPixels
+                    
+                    // המרה חכמה ובטוחה של רזולוציה:
+                    // במקום להכפיל פשוט ב-3 ולהקריס את הזיכרון (OOM), אנו מחשבים רזולוציה מקסימלית:
+                    // בדרך כלל המקור של דף PDF הוא כ-600 פיקסלים.
+                    // נשאף לאיכות טובה של פי 2 מרוחב המסך או מקסימום 2000 פיקסלים כדי לא לדרוס את ה-GPU.
+                    val targetWidth = minOf(screenWidth * 2, 2000)
+                    val targetHeight = (targetWidth.toFloat() * page.height / page.width).toInt()
 
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                    // מניעת קריסות באנדרואידים עם מעט RAM - הגבלנו ל-2000 פיקסלים.
+                    // PdfRenderer דורש ARGB_8888 ולכן החזרנו לזה, הפתרון לקריסה נמצא בחיתוך הגודל למעלה!
+                    val bitmap = Bitmap.createBitmap(targetWidth, targetHeight, Bitmap.Config.ARGB_8888)
                     bitmap.eraseColor(android.graphics.Color.WHITE)
 
                     page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)

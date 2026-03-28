@@ -69,6 +69,16 @@ const STUDY_CONFIG = {
     detailMode: 'onkelos',
     rules: ['מטרת המסלול להשלים את כל הפרשה לפני שבת.'],
   },
+  tehillim: {
+    key: 'tehillim',
+    title: 'תהלים יומי',
+    subtitle: 'תהלים לפי יום בחודש',
+    accent: 'blue',
+    kind: 'chapters',
+    matchers: ['daily psalms', 'psalm', 'tehillim'],
+    detailMode: 'tehillim',
+    rules: ['קריאת תהלים לפי חלוקה חודשית.'],
+  },
 };
 
 const HEBREW_ORDINALS = [
@@ -393,9 +403,55 @@ function mapOnkelosSections(torahData, onkelosData) {
   return sections.filter((row) => row.he || row.en);
 }
 
+function parseTehillimStyle(textData, ref) {
+  const heRaw = textData?.he || textData?.text;
+  if (!heRaw || !Array.isArray(heRaw)) return [];
+
+  // Detect start chapter and start verse from ref (e.g. "Psalms 119:97-176" or "Psalms 1-9")
+  const cvMatch = String(ref).match(/Psalms?\s+(\d+):(\d+)/i);
+  const chMatch = String(ref).match(/Psalms?\s+(\d+)/i);
+  const startChapter = cvMatch ? parseInt(cvMatch[1], 10) : (chMatch ? parseInt(chMatch[1], 10) : 1);
+  const startVerse   = cvMatch ? parseInt(cvMatch[2], 10) : 1;
+
+  const result = [];
+  let id = 1;
+
+  if (Array.isArray(heRaw[0])) {
+    // Multi-chapter: he = [[ch1v1, …], [ch2v1, …], …]
+    heRaw.forEach((chVerses, ci) => {
+      const chNum = startChapter + ci;
+      result.push({ id: String(id++), isHeader: true, isChapterHeader: true,
+        he: `תהלים פרק ${getHebrewOrdinal(chNum)}`, en: '', rashi: [] });
+      chVerses.forEach((verse, vi) => {
+        if (verse && typeof verse === 'string') {
+          result.push({ id: String(id++), isHeader: false,
+            he: stripHtml(verse), en: '', rashi: [], verseNum: vi + 1 });
+        }
+      });
+    });
+  } else {
+    // Single-chapter range (e.g. Psalms 119:1-96)
+    result.push({ id: String(id++), isHeader: true, isChapterHeader: true,
+      he: `תהלים פרק ${getHebrewOrdinal(startChapter)}`, en: '', rashi: [] });
+    heRaw.forEach((verse, vi) => {
+      if (verse && typeof verse === 'string') {
+        result.push({ id: String(id++), isHeader: false,
+          he: stripHtml(verse), en: '', rashi: [], verseNum: startVerse + vi });
+      }
+    });
+  }
+
+  return result;
+}
+
 async function fetchTextByMode(ref, mode) {
   if (!ref) return { sections: [] };
   const safeRef = encodeURI(ref.replace(/ /g, '_'));
+
+  if (mode === 'tehillim') {
+    const textData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+    return { sections: parseTehillimStyle(textData, ref) };
+  }
 
   if (mode === 'onkelos') {
     try {
@@ -505,7 +561,7 @@ async function resolveStudy(calendarItems, config, dateString) {
     return { ...config, available: false, label: '', ref: '', sections: [], preview: '' };
   }
 
-  let refsToFetch = [item.ref];
+  let refsToFetch = Array.isArray(item.refs) && item.refs.length > 0 ? item.refs : [item.ref];
   let resolvedRef = item.ref;
 
   if (config.key === 'tanya' && item.ref) {
@@ -518,8 +574,10 @@ async function resolveStudy(calendarItems, config, dateString) {
   if (config.key === 'rambam' && item.refYesterday) {
     refsToFetch = [
       { ref: item.refYesterday, slice: 'last1' },
-      { ref: item.ref,          slice: 'first2' },
+      { ref: item.ref,          slice: item.refToday2 ? null : 'first2' },
     ];
+    // כשפרק 2 ופרק 3 הם מספרים שונים — מוסיפים אותו בנפרד
+    if (item.refToday2) refsToFetch.push({ ref: item.refToday2, slice: null });
   }
 
   // שניים מקרא – כל 7 העליות עם כותרות עליות + כותרות פרקים

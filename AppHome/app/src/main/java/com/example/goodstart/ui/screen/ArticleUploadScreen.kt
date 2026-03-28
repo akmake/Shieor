@@ -164,13 +164,32 @@ fun ArticleUploadScreen(
                 // ── חילוץ טקסט ────────────────────────────────────────────────
                 is UploadState.Extracting -> {
                     Column(
-                        modifier            = Modifier.fillMaxSize(),
+                        modifier            = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        CircularProgressIndicator(color = Primary)
-                        Spacer(Modifier.height(16.dp))
-                        Text("מחלץ טקסט מה-PDF...", color = Muted, fontSize = 15.sp)
+                        if (s.total > 0) {
+                            val progress = s.page.toFloat() / s.total
+                            Text(
+                                "עמוד ${s.page} מתוך ${s.total}",
+                                color    = Ink,
+                                fontSize = 15.sp,
+                                fontFamily = BaHaYetzira
+                            )
+                            Spacer(Modifier.height(14.dp))
+                            LinearProgressIndicator(
+                                progress    = { progress },
+                                modifier    = Modifier.fillMaxWidth(),
+                                color       = Primary,
+                                trackColor  = Primary.copy(alpha = 0.15f)
+                            )
+                        } else {
+                            CircularProgressIndicator(color = Primary)
+                            Spacer(Modifier.height(16.dp))
+                            Text("מחלץ טקסט מה-PDF...", color = Muted, fontSize = 15.sp)
+                        }
                     }
                 }
 
@@ -221,17 +240,26 @@ fun ArticleUploadScreen(
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
                             OutlinedButton(
-                                onClick  = { vm.reset() },
+                                onClick  = { vm.save(uploadToServer = false) },
                                 modifier = Modifier.weight(1f),
-                                shape    = RoundedCornerShape(10.dp)
-                            ) { Text("בחר מחדש") }
+                                shape    = RoundedCornerShape(10.dp),
+                                colors   = ButtonDefaults.outlinedButtonColors(contentColor = Primary)
+                            ) { Text("שמור למכשיר (אופליין)") }
 
                             Button(
-                                onClick  = { vm.upload() },
+                                onClick  = { vm.save(uploadToServer = true) },
                                 modifier = Modifier.weight(1f),
                                 colors   = ButtonDefaults.buttonColors(containerColor = Primary),
                                 shape    = RoundedCornerShape(10.dp)
-                            ) { Text("שמור מאמר") }
+                            ) { Text("שתף לשרת") }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        TextButton(
+                            onClick = { vm.reset() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("בטל / בחר קובץ אחר", color = Muted)
                         }
 
                         Spacer(Modifier.height(32.dp))

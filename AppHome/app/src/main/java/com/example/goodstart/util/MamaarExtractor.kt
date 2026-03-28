@@ -107,7 +107,8 @@ object MamaarExtractor {
                 .take(3)
         }
         val freq      = headLines.flatten().groupingBy { it }.eachCount()
-        val threshold = (pages.size / 2).coerceAtLeast(2)
+        // הורדת הרף ל-25% במקום 50%, כדי לתפוס כותרות מתחלפות (זוגי/אי-זוגי) או פרקים בלי כותרת
+        val threshold = (pages.size / 4).coerceAtLeast(2)
         return freq.filter { it.value >= threshold }.keys
     }
 
@@ -140,10 +141,34 @@ object MamaarExtractor {
         return result.joinToString("\n")
     }
 
-    private fun String.isPageNumber() = matches(Regex("^\\d{2,4}$"))
+    private fun String.isPageNumber(): Boolean {
+        val t = trim()
+        // מספרים בלבד או עם תווים עוטפים כמו: - 12 - | [12] | (12)
+        if (t.matches(Regex("^[-_\\[(]*\\d{1,4}[-_\\])]*$"))) return true
+        // אותיות עבריות מוקפות בתווים (ספררויות עבריות): - יב -
+        if (t.matches(Regex("^[-_\\[(]+[א-ת]{1,3}[-_\\])]+$"))) return true
+        // מתחיל במילה עמוד
+        if (t.startsWith("עמוד ")) return true
+        return false
+    }
 
-    private fun String.isFootnoteBlockStart() =
-        matches(Regex("^\\(\\d+.*")) || matches(Regex("^\\d{1,2}[).] .*"))
+    private fun String.isFootnoteBlockStart(): Boolean {
+        val t = trim()
+        // 1. זיהוי קו מפריד של הערות שוליים (לפחות 3 קווים תחתונים/מקפים)
+        if (t.matches(Regex("^[_\\-\u2014=]{3,}.*"))) return true
+        
+        // 2. הערות שוליים שמתחילות במספרים: 1. | 1) | (1) | [1]
+        if (t.matches(Regex("^[(\\[]?\\d{1,3}[).\\]]?\\s+.*"))) return true
+        
+        // 3. הערות שוליים באותיות עבריות מוקפות: (א) | [א] | *א*
+        // (החרגנו "א)" כדי לא לדרוס את חלוקת הפסקאות שרצה למעלה)
+        if (t.matches(Regex("^[(\\[\\*][א-ת][)\\]\\*]\\s+.*"))) return true
+        
+        // 4. מתחיל בכוכבית
+        if (t.matches(Regex("^\\*+.*"))) return true
+
+        return false
+    }
 
     // ─── Title detection ─────────────────────────────────────────────────────
 

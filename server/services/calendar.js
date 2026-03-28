@@ -3,8 +3,50 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
 const TORAHCALC_BASE = 'https://www.torahcalc.com';
-const HEBCAL_BASE = 'https://www.hebcal.com';
-const SEFARIA_BASE = 'https://www.sefaria.org';
+const HEBCAL_BASE    = 'https://www.hebcal.com';
+const SEFARIA_BASE   = 'https://www.sefaria.org';
+
+// תהלים לפי יום בחודש העברי (מנהג חב"ד)
+const TEHILLIM_SCHEDULE = [
+  null,               // index 0 — unused
+  'Psalms 1-9',       // א
+  'Psalms 10-17',     // ב
+  'Psalms 18-22',     // ג
+  'Psalms 23-28',     // ד
+  'Psalms 29-34',     // ה
+  'Psalms 35-38',     // ו
+  'Psalms 39-43',     // ז
+  'Psalms 44-48',     // ח
+  'Psalms 49-54',     // ט
+  'Psalms 55-59',     // י
+  'Psalms 60-65',     // יא
+  'Psalms 66-68',     // יב
+  'Psalms 69-71',     // יג
+  'Psalms 72-76',     // יד
+  'Psalms 77-78',     // טו
+  'Psalms 79-82',     // טז
+  'Psalms 83-87',     // יז
+  'Psalms 88-89',     // יח
+  'Psalms 90-96',     // יט
+  'Psalms 97-103',    // כ
+  'Psalms 104-105',   // כא
+  'Psalms 106-107',   // כב
+  'Psalms 108-112',   // כג
+  'Psalms 113-118',   // כד
+  'Psalms 119:1-96',  // כה
+  'Psalms 119:97-176',// כו
+  'Psalms 120-134',   // כז
+  'Psalms 135-139',   // כח
+  'Psalms 140-144',   // כט
+  'Psalms 145-150',   // ל
+];
+
+async function getHebrewDayOfMonth(dateString) {
+  const [y, m, d] = dateString.split('-').map(Number);
+  const url = `${HEBCAL_BASE}/converter?gy=${y}&gm=${m}&gd=${d}&g2h=1&cfg=json`;
+  const data = await fetchJson(url);
+  return data?.hd ?? null; // מספר יום בחודש העברי (1-30)
+}
 
 // ── Tanya daily cache (persisted to disk) ───────────────────────────────────
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -198,14 +240,14 @@ export async function getDailyCalendar(dateString) {
       const refYesterday = yesterdayChapters[yesterdayChapters.length - 1];
 
       // First two chapters of today's block → chapters 2-3 of our 3.
-      // They are always in the same book (cross-book split always falls on ch3).
+      // ch1 and ch2 may be from different books (cross-book transition).
       const ch1 = todayChapters[0];
       const ch2 = todayChapters[1];
       const mCh1 = ch1.match(/^(.*?)\.(\d+)$/);
       const mCh2 = ch2.match(/^(.*?)\.(\d+)$/);
-      const refToday = (mCh1 && mCh2 && mCh1[1] === mCh2[1])
-        ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}`
-        : ch1;
+      const sameBook = mCh1 && mCh2 && mCh1[1] === mCh2[1];
+      const refToday  = sameBook ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}` : ch1;
+      const refToday2 = sameBook ? null : ch2; // פרק שלישי כשחוצה ספרים
 
       // Build Hebrew label from the actual 3 chapters being shown (Chabad alignment).
       const yesterdayHe = hebrewChapterEntries(r3Yest?.hebrewName);
@@ -216,11 +258,12 @@ export async function getDailyCalendar(dateString) {
       ].filter(Boolean);
       const displayHe   = condenseRambamLabel(rawEntries);
 
-      console.log(`[calendar] Rambam today=${refToday} | yesterday=${refYesterday} | label="${displayHe}"`);
+      console.log(`[calendar] Rambam today=${refToday}${refToday2 ? '+'+refToday2 : ''} | yesterday=${refYesterday} | label="${displayHe}"`);
       items.push({
         title: { en: 'Daily Rambam (3 chapters)', he: 'רמב"ם יומי' },
         ref: refToday,
         refYesterday,
+        ...(refToday2 && { refToday2 }),
         displayValue: { he: displayHe || r3Today?.hebrewName || refToday },
       });
     }
@@ -285,35 +328,59 @@ export async function getDailyCalendar(dateString) {
     console.error('[calendar] Hebcal failed:', err.message);
   }
 
-  // ── 3. Tanya from Sefaria + daily cache ─────────────────────────────────────
+  // ── 3. Tanya + Tehillim from Sefaria calendar ────────────────────────────────
   try {
-    const cachedRef = tanyaCache.get(dateString);
-    if (cachedRef) {
+    const cachedTanya = tanyaCache.get(dateString);
+    if (cachedTanya) {
       items.push({
         title: { en: 'Tanya', he: 'תניא יומי' },
-        ref: cachedRef,
-        displayValue: { he: cachedRef },
+        ref: cachedTanya,
+        displayValue: { he: cachedTanya },
       });
-      console.log(`[calendar] Tanya from cache: ${cachedRef}`);
-    } else {
-      const sefaria = await fetchJson(buildSefariaCalendarUrl(dateString));
-      const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
-      for (const item of calItems) {
-        const en = String(item?.title?.en || '').toLowerCase();
-        if (en.includes('tanya')) {
-          if (item.ref) {
-            tanyaCache.set(dateString, item.ref);
-            saveTanyaCache(tanyaCache);
-          }
-          items.push(item);
-          console.log(`[calendar] Tanya from Sefaria (${dateString}): ${item.ref}`);
-          break;
-        }
+      console.log(`[calendar] Tanya from cache: ${cachedTanya}`);
+    }
+
+    // Always fetch Sefaria — needed for Tehillim (and Tanya when not cached)
+    const sefaria = await fetchJson(buildSefariaCalendarUrl(dateString));
+    const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
+
+    for (const item of calItems) {
+      const en = String(item?.title?.en || '').toLowerCase();
+
+      if (!cachedTanya && en.includes('tanya')) {
+        if (item.ref) { tanyaCache.set(dateString, item.ref); saveTanyaCache(tanyaCache); }
+        items.push(item);
+        console.log(`[calendar] Tanya from Sefaria (${dateString}): ${item.ref}`);
       }
-      if (!hebrewDate && sefaria?.date?.hebrew) hebrewDate = sefaria.date.hebrew;
+
+      // (תהלים מחושב בנפרד — ראה למטה)
+    }
+
+    if (!hebrewDate && sefaria?.date?.hebrew) hebrewDate = sefaria.date.hebrew;
+  } catch (err) {
+    console.error('[calendar] Sefaria fetch failed:', err.message);
+  }
+
+  // ── 4. Tehillim — חישוב לפי יום בחודש העברי (HebCal) ───────────────────────
+  try {
+    const heDay = await getHebrewDayOfMonth(dateString);
+    if (heDay >= 1 && heDay <= 30) {
+      // בחודש של 29 ימים, יום כ"ט כולל גם את יום ל'
+      const day = heDay === 30 ? 30 : heDay;
+      const ref = TEHILLIM_SCHEDULE[day];
+      if (ref) {
+        const he29 = heDay === 29 ? `${TEHILLIM_SCHEDULE[29].replace('Psalms ', 'תהלים ')} + ${TEHILLIM_SCHEDULE[30].replace('Psalms ', '')}` : null;
+        const displayRef = ref.replace('Psalms ', 'תהלים ').replace(':', ':').replace('-', '-');
+        items.push({
+          title: { en: 'Daily Psalms', he: 'תהלים יומי' },
+          ref,
+          displayValue: { he: he29 || displayRef },
+        });
+        console.log(`[calendar] Tehillim day ${heDay}: ${ref}`);
+      }
     }
   } catch (err) {
-    console.error('[calendar] Sefaria Tanya fetch failed:', err.message);
+    console.error('[calendar] Tehillim calc failed:', err.message);
   }
 
   return { items, hebrewDate };

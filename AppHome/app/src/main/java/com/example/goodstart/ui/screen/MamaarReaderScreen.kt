@@ -225,10 +225,10 @@ private fun MamaarSectionRow(section: MamaarSection, fontSize: Int) {
     if (paragraphs.isEmpty()) return
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-        // פסקה ראשונה: אם יש כותרת סעיף — מוטמעת inline בצבע ירוק בדיוק כמו HalachaRow
+        // פסקה ראשונה: אם יש כותרת סעיף — מוטמעת inline באותו צבע (שחור) בדיוק כמו שביקשת
         val firstPara = buildAnnotatedString {
             if (!section.heading.isNullOrBlank()) {
-                withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold, fontSize = (fontSize + 2).sp)) {
+                withStyle(SpanStyle(color = Color.Black, fontWeight = FontWeight.Bold, fontSize = (fontSize + 2).sp)) {
                     append(section.heading + "\u00A0")
                 }
             }

@@ -3,6 +3,7 @@ package com.example.goodstart.network
 import com.example.goodstart.model.ArticleDto
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
+import retrofit2.http.Body
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
@@ -25,4 +26,10 @@ interface ArticleUploadService {
         @Part("pageCount") pageCount: RequestBody,
         @Part("title")    title:     RequestBody
     ): ArticleDto
+
+    // Text-only save — used when PDF was extracted locally (no file upload needed)
+    @POST("api/articles/save")
+    suspend fun saveArticle(@Body body: SaveArticleBody): ArticleDto
 }
+
+data class SaveArticleBody(val rawText: String, val pageCount: Int, val title: String)

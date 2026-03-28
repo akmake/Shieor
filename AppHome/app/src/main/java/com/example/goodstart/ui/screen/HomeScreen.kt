@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -34,7 +36,7 @@ import com.example.goodstart.ui.viewmodel.HomeViewModel
 import com.example.goodstart.util.HebrewDate
 
 private val STUDY_ORDER = listOf(
-    "chumash", "tanya", "rambam", "rambamOne", "seferHamitzvot", "shnayimMikra"
+    "chumash", "tanya", "rambam", "rambamOne", "tehillim", "seferHamitzvot", "shnayimMikra"
 )
 
 @Composable
@@ -172,20 +174,78 @@ fun HomeScreen(
 @Composable
 private fun StudyCard(study: Study, onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 1.dp,
-        color = CardBg
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 0.dp,
+        color = CardBg,
+        border = BorderStroke(1.dp, LineColor.copy(alpha = 0.4f))
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Primary))
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
-                Text(study.title ?: "", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Ink, maxLines = 1)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // אייקון/עיגול צבעוני ליד הטקסט במקום הפס בצד
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                // מציג את האות הראשונה של השיעור כסמליל יפהפה
+                Text(
+                    text = study.title?.firstOrNull()?.toString() ?: "",
+                    color = Primary,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = BaHaYetzira
+                )
+            }
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = study.title ?: "", 
+                    fontSize = 18.sp, 
+                    fontWeight = FontWeight.Bold, 
+                    fontFamily = BaHaYetzira, 
+                    color = Ink, 
+                    maxLines = 1
+                )
                 if (!study.label.isNullOrEmpty()) {
-                    Text(study.label, fontSize = 12.sp, color = Muted, maxLines = 1)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = study.label, 
+                        fontSize = 13.sp, 
+                        color = Muted, 
+                        maxLines = 1
+                    )
                 }
             }
-            Icon(Icons.Default.ChevronLeft, null, tint = Primary, modifier = Modifier.padding(end = 14.dp).size(20.dp))
+            
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(BgColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Default.ChevronLeft, 
+                    contentDescription = null, 
+                    tint = Primary, 
+                    modifier = Modifier.size(18.dp)
+                )
+            }
         }
     }
 }
@@ -193,18 +253,42 @@ private fun StudyCard(study: Study, onClick: () -> Unit) {
 @Composable
 private fun RabbenuTamCard(onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 1.dp,
-        color = CardBg
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 0.dp,
+        color = CardBg,
+        border = BorderStroke(1.dp, LineColor.copy(alpha = 0.4f))
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(64.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Primary))
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
-                Text("קריאת שמע", fontSize = 16.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Ink, maxLines = 1)
-                Text("לפי רבינו תם", fontSize = 12.sp, color = Muted, maxLines = 1)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Primary.copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("ק", color = Primary, fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira)
             }
-            Icon(Icons.Default.ChevronLeft, null, tint = Primary, modifier = Modifier.padding(end = 14.dp).size(20.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text("קריאת שמע", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Ink, maxLines = 1)
+                Spacer(modifier = Modifier.height(2.dp))
+                Text("לפי רבינו תם", fontSize = 13.sp, color = Muted, maxLines = 1)
+            }
+            Box(
+                modifier = Modifier.size(32.dp).clip(CircleShape).background(BgColor),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.ChevronLeft, null, tint = Primary, modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -212,18 +296,39 @@ private fun RabbenuTamCard(onClick: () -> Unit) {
 @Composable
 private fun PdfLibraryCard(onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 1.dp,
-        color = Color(0xFFD0DCE5)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 0.dp,
+        color = Color(0xFFF0F5F9), // רקע עדין ובהיר יותר
+        border = BorderStroke(1.dp, Color(0xFFD0DCE5))
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(80.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Color(0xFF263238)))
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
-                Text("ספרייה אישית", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF263238), maxLines = 1)
-                Text("המשך לימוד אישי מתוך קובץ PDF (גמרא / שיחות)", fontSize = 13.sp, color = Color(0xFF546E7A), maxLines = 2)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF263238).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.PictureAsPdf, contentDescription = null, tint = Color(0xFF263238), modifier = Modifier.size(24.dp))
             }
-            Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF263238), modifier = Modifier.padding(end = 14.dp).size(20.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text("ספרייה אישית", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF263238), maxLines = 1)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("המשך לימוד אישי מתוך קובץ PDF (גמרא / שיחות)", fontSize = 13.sp, color = Color(0xFF546E7A), maxLines = 2, lineHeight = 18.sp)
+            }
+            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF263238), modifier = Modifier.size(18.dp))
+            }
         }
     }
 }
@@ -231,18 +336,39 @@ private fun PdfLibraryCard(onClick: () -> Unit) {
 @Composable
 private fun MamaarimCard(onClick: () -> Unit) {
     Surface(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        shadowElevation = 1.dp,
-        color = Color(0xFFE8F5E9)
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 0.dp,
+        color = Color(0xFFF2F9F2), // רקע ירוק בהיר מאוד
+        border = BorderStroke(1.dp, Color(0xFFC8E6C9))
     ) {
-        Row(modifier = Modifier.fillMaxWidth().height(80.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.width(5.dp).fillMaxHeight().background(Color(0xFF2E7D32)))
-            Column(modifier = Modifier.weight(1f).padding(horizontal = 14.dp), verticalArrangement = Arrangement.Center) {
-                Text("מאמרים", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF1B5E20), maxLines = 1)
-                Text("ייבא מאמר מ-PDF · הטקסט יחולץ לקריאה אופליין", fontSize = 13.sp, color = Color(0xFF388E3C), maxLines = 2)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFF2E7D32).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Book, contentDescription = null, tint = Color(0xFF2E7D32), modifier = Modifier.size(24.dp))
             }
-            Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF2E7D32), modifier = Modifier.padding(end = 14.dp).size(20.dp))
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text("מאמרים", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFF1B5E20), maxLines = 1)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("ייבא מאמר מ-PDF · הטקסט יחולץ לקריאה אופליין", fontSize = 13.sp, color = Color(0xFF388E3C), maxLines = 2, lineHeight = 18.sp)
+            }
+            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+            }
         }
     }
 }

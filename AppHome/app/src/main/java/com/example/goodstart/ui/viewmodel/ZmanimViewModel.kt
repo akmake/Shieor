@@ -10,13 +10,17 @@ import androidx.lifecycle.viewModelScope
 import com.example.goodstart.ZmanimAlarmReceiver
 import com.example.goodstart.alarm.AlarmConfig
 import com.example.goodstart.network.RetrofitClient
+import com.example.goodstart.network.ZmanDto
+import com.example.goodstart.network.ZmanimDay
 import com.example.goodstart.util.HebrewDate
 import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import java.util.*
 
 data class ZmanEntry(val label: String, val time: String, val timeMillis: Long)
@@ -27,12 +31,12 @@ data class ZmanimState(
     val error: String? = null,
     val date: String = HebrewDate.today(),
     val selectedCity: Int = 0,
-    val alarms: Map<String, AlarmConfig> = emptyMap()
+    val alarms: Map<String, AlarmConfig> = emptyMap(),
+    val syncing: Boolean = false   // background download in progress
 )
 
 private data class CityInfo(val name: String, val locationId: Int)
 
-// מיפוי סוגי זמנים מהשרת לתוויות עבריות (לפי סדר הצגה)
 private val ZMANIM_ORDER = listOf(
     "AlosHashachar"    to "עלות השחר",
     "EarliestTefillin" to "משיכיר",
@@ -62,16 +66,32 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         CityInfo("באר שבע", 688)
     )
 
-    private val prefs = application.getSharedPreferences("ZmanimAlarms", Context.MODE_PRIVATE)
-    private val gson  = Gson()
+    private val alarmPrefs = application.getSharedPreferences("ZmanimAlarms", Context.MODE_PRIVATE)
+    private val gson       = Gson()
+    private val cacheDir   = File(application.filesDir, "zmanim_cache").also { it.mkdirs() }
+
+    // In-memory: locationId → (date → zmanim list)
+    private val memCache = mutableMapOf<Int, MutableMap<String, List<ZmanDto>>>()
 
     init {
+        val savedCity = application.getSharedPreferences("ZmanimPrefs", Context.MODE_PRIVATE)
+            .getInt("selected_city", 0).coerceIn(0, cityInfos.lastIndex)
+        if (savedCity != 0) _state.value = _state.value.copy(selectedCity = savedCity)
         loadAlarms()
-        fetch()
+        viewModelScope.launch(Dispatchers.IO) {
+            loadFileCacheIntoMemory()
+            withContext(Dispatchers.Main) { fetch() }
+            syncMissingCities()
+        }
     }
+
+    // ── public API ───────────────────────────────────────────────────────────
 
     fun selectCity(idx: Int) {
         _state.value = _state.value.copy(selectedCity = idx, loading = true, error = null)
+        getApplication<Application>()
+            .getSharedPreferences("ZmanimPrefs", Context.MODE_PRIVATE)
+            .edit().putInt("selected_city", idx).apply()
         fetch()
     }
 
@@ -83,13 +103,12 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         fetch()
     }
 
-    /** Returns true if alarm was scheduled, false if the time is already in the past. */
+    /** Returns true if alarm was scheduled, false if time is already past. */
     fun scheduleAlarm(zman: ZmanEntry, config: AlarmConfig): Boolean {
-        val ctx     = getApplication<Application>()
+        val ctx      = getApplication<Application>()
         val offsetMs = config.offsetMinutes * 60_000L
-        val alarmTimeMs = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
-
-        if (alarmTimeMs <= System.currentTimeMillis()) return false
+        val alarmMs  = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
+        if (alarmMs <= System.currentTimeMillis()) return false
 
         val am     = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(ctx, ZmanimAlarmReceiver::class.java).apply {
@@ -101,9 +120,8 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
             ctx, zman.label.hashCode(), intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmTimeMs, pi)
-
-        prefs.edit().putString("alarm_${zman.label}", gson.toJson(config)).apply()
+        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmMs, pi)
+        alarmPrefs.edit().putString("alarm_${zman.label}", gson.toJson(config)).apply()
         _state.value = _state.value.copy(
             alarms = _state.value.alarms.toMutableMap().also { it[zman.label] = config }
         )
@@ -119,15 +137,100 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
         )
         pi?.let { am.cancel(it); it.cancel() }
-
-        prefs.edit().remove("alarm_${zmanLabel}").apply()
+        alarmPrefs.edit().remove("alarm_${zmanLabel}").apply()
         _state.value = _state.value.copy(
             alarms = _state.value.alarms.toMutableMap().also { it.remove(zmanLabel) }
         )
     }
 
+    // ── cache helpers ────────────────────────────────────────────────────────
+
+    private fun loadFileCacheIntoMemory() {
+        val listType = object : TypeToken<List<ZmanimDay>>() {}.type
+        cityInfos.forEach { city ->
+            val file = File(cacheDir, "city_${city.locationId}.json")
+            if (!file.exists()) return@forEach
+            try {
+                val days: List<ZmanimDay> = gson.fromJson(file.readText(), listType) ?: return@forEach
+                val map = days.associate { it.date to it.zmanim }.toMutableMap()
+                synchronized(memCache) { memCache[city.locationId] = map }
+            } catch (_: Exception) { /* corrupt cache — skip */ }
+        }
+    }
+
+    private suspend fun downloadCity(locationId: Int, year: Int) {
+        try {
+            val days = RetrofitClient.zmanimService.getZmanim(
+                locationId = locationId,
+                from       = "$year-01-01",
+                to         = "$year-12-31"
+            )
+            val incoming = days.associate { it.date to it.zmanim }
+            synchronized(memCache) {
+                val existing = memCache.getOrPut(locationId) { mutableMapOf() }
+                existing.putAll(incoming)
+            }
+            // Persist full map to file
+            val allDays = synchronized(memCache) {
+                memCache[locationId]?.map { (d, z) -> ZmanimDay(d, z) } ?: emptyList()
+            }
+            File(cacheDir, "city_$locationId.json").writeText(gson.toJson(allDays))
+        } catch (_: Exception) { /* no network — silent */ }
+    }
+
+    private fun hasCacheForYear(locationId: Int, year: Int): Boolean =
+        synchronized(memCache) {
+            memCache[locationId]?.keys?.any { it.startsWith("$year-") } == true
+        }
+
+    private suspend fun syncMissingCities() {
+        val year = Calendar.getInstance().get(Calendar.YEAR)
+        val missing = cityInfos.filter { !hasCacheForYear(it.locationId, year) }
+        if (missing.isEmpty()) return
+
+        withContext(Dispatchers.Main) {
+            _state.value = _state.value.copy(syncing = true)
+        }
+        missing.forEach { city ->
+            downloadCity(city.locationId, year)
+        }
+        withContext(Dispatchers.Main) {
+            _state.value = _state.value.copy(syncing = false)
+            // Re-render current view now that data arrived
+            fetch()
+        }
+    }
+
+    // ── display ──────────────────────────────────────────────────────────────
+
+    private fun fetch() {
+        val snap     = _state.value
+        val cityInfo = cityInfos[snap.selectedCity]
+        val date     = snap.date
+
+        val dayZmanim = synchronized(memCache) {
+            memCache[cityInfo.locationId]?.get(date)
+        }
+
+        if (dayZmanim != null) {
+            val byType  = dayZmanim.associateBy { it.type }
+            val entries = ZMANIM_ORDER.mapNotNull { (type, label) ->
+                val dto = byType[type] ?: return@mapNotNull null
+                ZmanEntry(label, dto.time, timeStringToMillis(date, dto.time))
+            }
+            _state.value = snap.copy(loading = false, zmanim = entries, error = null)
+        } else {
+            // Data not cached yet — kick off a download for this specific date
+            _state.value = snap.copy(loading = true)
+            viewModelScope.launch(Dispatchers.IO) {
+                downloadCity(cityInfo.locationId, date.substring(0, 4).toInt())
+                withContext(Dispatchers.Main) { fetch() }
+            }
+        }
+    }
+
     private fun loadAlarms() {
-        val alarms = prefs.all
+        val alarms = alarmPrefs.all
             .filterKeys { it.startsWith("alarm_") }
             .mapNotNull { (_, v) ->
                 try { gson.fromJson(v as String, AlarmConfig::class.java) } catch (_: Exception) { null }
@@ -136,42 +239,6 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         _state.value = _state.value.copy(alarms = alarms)
     }
 
-    private fun fetch() {
-        val snap     = _state.value
-        val cityInfo = cityInfos[snap.selectedCity]
-        val date     = snap.date
-
-        viewModelScope.launch {
-            val entries = withContext(Dispatchers.IO) {
-                try {
-                    val days = RetrofitClient.zmanimService.getZmanim(
-                        locationId = cityInfo.locationId,
-                        from       = date,
-                        to         = date
-                    )
-                    val rawZmanim = days.firstOrNull()?.zmanim ?: return@withContext null
-                    val byType    = rawZmanim.associateBy { it.type }
-
-                    ZMANIM_ORDER.mapNotNull { (type, label) ->
-                        val dto = byType[type] ?: return@mapNotNull null
-                        ZmanEntry(
-                            label      = label,
-                            time       = dto.time,
-                            timeMillis = timeStringToMillis(date, dto.time)
-                        )
-                    }
-                } catch (_: Exception) { null }
-            }
-
-            if (entries == null) {
-                _state.value = _state.value.copy(loading = false, error = "שגיאה בטעינת הזמנים")
-            } else {
-                _state.value = _state.value.copy(loading = false, zmanim = entries, error = null)
-            }
-        }
-    }
-
-    /** ממיר מחרוזת שעה "H:mm" + תאריך ISO ל-milliseconds ב-Asia/Jerusalem */
     private fun timeStringToMillis(isoDate: String, timeStr: String): Long {
         return try {
             val (year, month, day) = isoDate.split("-").map { it.toInt() }
