@@ -369,8 +369,202 @@ export async function getDailyCalendar(dateString) {
       const day = heDay === 30 ? 30 : heDay;
       const ref = TEHILLIM_SCHEDULE[day];
       if (ref) {
-        const he29 = heDay === 29 ? `${TEHILLIM_SCHEDULE[29].replace('Psalms ', 'תהלים ')} + ${TEHILLIM_SCHEDULE[30].replace('Psalms ', '')}` : null;
-        const displayRef = ref.replace('Psalms ', 'תהלים ').replace(':', ':').replace('-', '-');
+                function getTehillimHebrewNum(nStr) {
+          let n = parseInt(nStr, 10);
+          if (isNaN(n) || n <= 0) return String(n);
+          let h = '';
+          if (n >= 100) { h += 'ק'; n -= 100; }
+          if (n === 15) return h + 'טו';
+          if (n === 16) return h + 'טז';
+          if (n >= 90) { h += 'צ'; n -= 90; }
+          else if (n >= 80) { h += 'פ'; n -= 80; }
+          else if (n >= 70) { h += 'ע'; n -= 70; }
+          else if (n >= 60) { h += 'ס'; n -= 60; }
+          else if (n >= 50) { h += 'נ'; n -= 50; }
+          else if (n >= 40) { h += 'מ'; n -= 40; }
+          else if (n >= 30) { h += 'ל'; n -= 30; }
+          else if (n >= 20) { h += 'כ'; n -= 20; }
+          else if (n >= 10) { h += 'י'; n -= 10; }
+          const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+          if (n > 0) h += ones[n];
+          return h;
+        }
+
+        const raw29 = heDay === 29 ? ('תהלים ' + TEHILLIM_SCHEDULE[29].replace('Psalms ', '') + '-' + TEHILLIM_SCHEDULE[30].replace('Psalms ', '')) : null;
+        const he29 = raw29 ? raw29.replace(/\d+/g, match => getTehillimHebrewNum(match)).replace(':', ':').replace('-', '-') : null;
+        const displayRef = ref.replace('Psalms ', 'תהלים ').replace(/\d+/g, match => getTehillimHebrewNum(match)).replace(':', ':').replace('-', '-');
+        items.push({
+          title: { en: 'Daily Rambam (1 chapter)', he: 'רמב"ם יומי (פרק 1)' },
+          ref: ref1,
+          displayValue: { he: r1Today.hebrewName || ref1 },
+        });
+      }
+    }
+
+    // TorahCalc is offset +1 vs Chabad. Chabad[D] = [TorahCalc[D-1].ch3, TorahCalc[D].ch1, TorahCalc[D].ch2].
+    // When chapters cross a book boundary TorahCalc omits the URL, so always use the `name` field.
+    const yesterdayChapters = nameToChapterRefs(r3Yest?.name);
+    const todayChapters     = nameToChapterRefs(r3Today?.name);
+
+    if (yesterdayChapters.length > 0 && todayChapters.length >= 2) {
+      // Last chapter of yesterday's block → chapter 1 of our 3
+      const refYesterday = yesterdayChapters[yesterdayChapters.length - 1];
+
+      // First two chapters of today's block → chapters 2-3 of our 3.
+      // ch1 and ch2 may be from different books (cross-book transition).
+      const ch1 = todayChapters[0];
+      const ch2 = todayChapters[1];
+      const mCh1 = ch1.match(/^(.*?)\.(\d+)$/);
+      const mCh2 = ch2.match(/^(.*?)\.(\d+)$/);
+      const sameBook = mCh1 && mCh2 && mCh1[1] === mCh2[1];
+      const refToday  = sameBook ? `${mCh1[1]}.${mCh1[2]}-${mCh2[2]}` : ch1;
+      const refToday2 = sameBook ? null : ch2; // פרק שלישי כשחוצה ספרים
+
+      // Build Hebrew label from the actual 3 chapters being shown (Chabad alignment).
+      const yesterdayHe = hebrewChapterEntries(r3Yest?.hebrewName);
+      const todayHe     = hebrewChapterEntries(r3Today?.hebrewName);
+      const rawEntries  = [
+        yesterdayHe[yesterdayHe.length - 1],
+        ...todayHe.slice(0, 2),
+      ].filter(Boolean);
+      const displayHe   = condenseRambamLabel(rawEntries);
+
+      console.log(`[calendar] Rambam today=${refToday}${refToday2 ? '+'+refToday2 : ''} | yesterday=${refYesterday} | label="${displayHe}"`);
+      items.push({
+        title: { en: 'Daily Rambam (3 chapters)', he: 'רמב"ם יומי' },
+        ref: refToday,
+        refYesterday,
+        ...(refToday2 && { refToday2 }),
+        displayValue: { he: displayHe || r3Today?.hebrewName || refToday },
+      });
+    }
+
+    if (shmToday?.name) {
+      const shmRef = seferHamitzvotNameToRef(shmToday.name);
+      if (shmRef) {
+        items.push({
+          title: { en: 'Daily Sefer HaMitzvot', he: 'ספר המצוות היומי' },
+          ref: shmRef,
+          displayValue: { he: shmToday.hebrewName || shmToday.name },
+        });
+      }
+    }
+  } catch (err) {
+    console.error('[calendar] TorahCalc Rambam failed:', err.message);
+  }
+
+  // ── 2. Parasha (Chumash + Shnayim Mikra) from Hebcal ──────────────────────
+  // If the upcoming Shabbat has no regular Torah reading (e.g. Pesach, Yom Tov),
+  // skip ahead week by week until a regular parashat is found (max 4 attempts).
+  try {
+    const baseShabbat = toShabbatDate(dateString);
+    const [bsy, bsm, bsd] = baseShabbat.split('-').map(Number);
+    let parashat = null;
+
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const shabbat = new Date(Date.UTC(bsy, bsm - 1, bsd + attempt * 7))
+        .toISOString().slice(0, 10);
+      console.log(`[calendar] Hebcal attempt ${attempt + 1}: shabbat=${shabbat} (for ${dateString})`);
+      try {
+        const hc = await fetchJson(
+          `${HEBCAL_BASE}/shabbat?cfg=json&geonameid=281184&M=on&lg=he&leyning=on&dt=${shabbat}`
+        );
+        const found = (hc?.items || []).find(i => i.category === 'parashat');
+        // Require all 7 aliyot — Yom Tov special readings have only 4-5.
+        if (found?.leyning && found.leyning['7']) {
+          parashat = found;
+          break;
+        }
+        console.log(`[calendar] No regular parashat on ${shabbat} (found=${!!found}, has7=${!!(found?.leyning?.['7'])}), trying next week`);
+      } catch (innerErr) {
+        console.error(`[calendar] Hebcal attempt ${attempt + 1} failed:`, innerErr.message);
+      }
+    }
+
+    if (parashat?.leyning) {
+      const { leyning } = parashat;
+      // 0-indexed aliyot array: index 0 = Sunday = leyning["1"], … index 6 = Shabbat = leyning["7"]
+      const aliyot = ['1', '2', '3', '4', '5', '6', '7'].map(k => leyning[k] || null);
+      const heParasha = parashat.hebrew || parashat.title_orig || '';
+      hebrewDate = parashat.hdate || '';
+      console.log(`[calendar] Parasha: ${heParasha} | shabbat aliyah: ${aliyot[6]}`);
+      items.push({
+        title: { en: 'Parashat HaShavua', he: heParasha },
+        ref: leyning.torah || aliyot.find(Boolean) || '',
+        displayValue: { he: heParasha },
+        extraDetails: { aliyot },
+      });
+    }
+  } catch (err) {
+    console.error('[calendar] Hebcal failed:', err.message);
+  }
+
+  // ── 3. Tanya + Tehillim from Sefaria calendar ────────────────────────────────
+  try {
+    const cachedTanya = tanyaCache.get(dateString);
+    if (cachedTanya) {
+      items.push({
+        title: { en: 'Tanya', he: 'תניא יומי' },
+        ref: cachedTanya,
+        displayValue: { he: cachedTanya },
+      });
+      console.log(`[calendar] Tanya from cache: ${cachedTanya}`);
+    }
+
+    // Always fetch Sefaria — needed for Tehillim (and Tanya when not cached)
+    const sefaria = await fetchJson(buildSefariaCalendarUrl(dateString));
+    const calItems = Array.isArray(sefaria?.calendar_items) ? sefaria.calendar_items : [];
+
+    for (const item of calItems) {
+      const en = String(item?.title?.en || '').toLowerCase();
+
+      if (!cachedTanya && en.includes('tanya')) {
+        if (item.ref) { tanyaCache.set(dateString, item.ref); saveTanyaCache(tanyaCache); }
+        items.push(item);
+        console.log(`[calendar] Tanya from Sefaria (${dateString}): ${item.ref}`);
+      }
+
+      // (תהלים מחושב בנפרד — ראה למטה)
+    }
+
+    if (!hebrewDate && sefaria?.date?.hebrew) hebrewDate = sefaria.date.hebrew;
+  } catch (err) {
+    console.error('[calendar] Sefaria fetch failed:', err.message);
+  }
+
+  // ── 4. Tehillim — חישוב לפי יום בחודש העברי (HebCal) ───────────────────────
+  try {
+    const heDay = await getHebrewDayOfMonth(dateString);
+    if (heDay >= 1 && heDay <= 30) {
+      // בחודש של 29 ימים, יום כ"ט כולל גם את יום ל'
+      const day = heDay === 30 ? 30 : heDay;
+      const ref = TEHILLIM_SCHEDULE[day];
+      if (ref) {
+        function getTehillimHebrewNum(nStr) {
+          let n = parseInt(nStr, 10);
+          if (isNaN(n) || n <= 0) return String(n);
+          let h = '';
+          if (n >= 100) { h += 'ק'; n -= 100; }
+          if (n === 15) return h + 'טו';
+          if (n === 16) return h + 'טז';
+          if (n >= 90) { h += 'צ'; n -= 90; }
+          else if (n >= 80) { h += 'פ'; n -= 80; }
+          else if (n >= 70) { h += 'ע'; n -= 70; }
+          else if (n >= 60) { h += 'ס'; n -= 60; }
+          else if (n >= 50) { h += 'נ'; n -= 50; }
+          else if (n >= 40) { h += 'מ'; n -= 40; }
+          else if (n >= 30) { h += 'ל'; n -= 30; }
+          else if (n >= 20) { h += 'כ'; n -= 20; }
+          else if (n >= 10) { h += 'י'; n -= 10; }
+          const ones = ['', 'א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ז', 'ח', 'ט'];
+          if (n > 0) h += ones[n];
+          return h;
+        }
+
+        const raw29 = heDay === 29 ? ('תהלים ' + TEHILLIM_SCHEDULE[29].replace('Psalms ', '') + '-' + TEHILLIM_SCHEDULE[30].replace('Psalms ', '')) : null;
+        const he29 = raw29 ? raw29.replace(/\d+/g, match => getTehillimHebrewNum(match)).replace(':', ':').replace('-', '-') : null;
+        const displayRef = ref.replace('Psalms ', 'תהלים ').replace(/\d+/g, match => getTehillimHebrewNum(match)).replace(':', ':').replace('-', '-');
+        
         items.push({
           title: { en: 'Daily Psalms', he: 'תהלים יומי' },
           ref,
