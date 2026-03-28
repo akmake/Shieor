@@ -407,11 +407,17 @@ function parseTehillimStyle(textData, ref) {
   const heRaw = textData?.he || textData?.text;
   if (!heRaw || !Array.isArray(heRaw)) return [];
 
-  // Detect start chapter and start verse from ref (e.g. "Psalms 119:97-176" or "Psalms 1-9")
   const cvMatch = String(ref).match(/Psalms?\s+(\d+):(\d+)/i);
   const chMatch = String(ref).match(/Psalms?\s+(\d+)/i);
   const startChapter = cvMatch ? parseInt(cvMatch[1], 10) : (chMatch ? parseInt(chMatch[1], 10) : 1);
   const startVerse   = cvMatch ? parseInt(cvMatch[2], 10) : 1;
+
+  // Join all verses of a chapter into one flowing text block with inline verse numbers
+  const joinVerses = (verses, firstVerseNum = 1) =>
+    verses
+      .map((v, vi) => (v && typeof v === 'string') ? `(${getHebrewOrdinal(firstVerseNum + vi)}) ${stripHtml(v)}` : '')
+      .filter(Boolean)
+      .join(' ');
 
   const result = [];
   let id = 1;
@@ -421,24 +427,16 @@ function parseTehillimStyle(textData, ref) {
     heRaw.forEach((chVerses, ci) => {
       const chNum = startChapter + ci;
       result.push({ id: String(id++), isHeader: true, isChapterHeader: true,
-        he: `תהלים פרק ${getHebrewOrdinal(chNum)}`, en: '', rashi: [] });
-      chVerses.forEach((verse, vi) => {
-        if (verse && typeof verse === 'string') {
-          result.push({ id: String(id++), isHeader: false,
-            he: stripHtml(verse), en: '', rashi: [], verseNum: vi + 1 });
-        }
-      });
+        he: `פרק ${getHebrewOrdinal(chNum)}`, en: '', rashi: [] });
+      const joined = joinVerses(chVerses);
+      if (joined) result.push({ id: String(id++), isHeader: false, he: joined, en: '', rashi: [] });
     });
   } else {
     // Single-chapter range (e.g. Psalms 119:1-96)
     result.push({ id: String(id++), isHeader: true, isChapterHeader: true,
-      he: `תהלים פרק ${getHebrewOrdinal(startChapter)}`, en: '', rashi: [] });
-    heRaw.forEach((verse, vi) => {
-      if (verse && typeof verse === 'string') {
-        result.push({ id: String(id++), isHeader: false,
-          he: stripHtml(verse), en: '', rashi: [], verseNum: startVerse + vi });
-      }
-    });
+      he: `פרק ${getHebrewOrdinal(startChapter)}`, en: '', rashi: [] });
+    const joined = joinVerses(heRaw, startVerse);
+    if (joined) result.push({ id: String(id++), isHeader: false, he: joined, en: '', rashi: [] });
   }
 
   return result;
@@ -704,5 +702,33 @@ export const getDailyStudy = async (req, res, next) => {
     res.json({ date, timezone: DEFAULT_TIMEZONE, hebrewDate, studies });
   } catch (error) {
     next(error);
+  }
+};
+
+// GET /api/study/tehillim-chapters?chapters=1,23,119
+// מחזיר sections של פרקים ספציפיים בתהלים (לפרקים אישיים של המשתמש)
+export const getTehillimChapters = async (req, res, next) => {
+  try {
+    const chaptersParam = String(req.query.chapters || '');
+    const chapterNums = chaptersParam
+      .split(',')
+      .map(n => parseInt(n.trim(), 10))
+      .filter(n => !isNaN(n) && n >= 1 && n <= 150);
+
+    if (chapterNums.length === 0) return res.json({ sections: [] });
+
+    const allSections = [];
+    for (const chNum of chapterNums) {
+      const ref = `Psalms ${chNum}`;
+      const safeRef = encodeURI(ref.replace(/ /g, '_'));
+      const textData = await fetchJson(`/api/texts/${safeRef}`, { context: 0, commentary: 0, pad: 0, lang: 'he' });
+      const sections = parseTehillimStyle(textData, ref);
+      allSections.push(...sections);
+    }
+
+    const numbered = allSections.map((s, i) => ({ ...s, id: String(i + 1) }));
+    res.json({ sections: numbered });
+  } catch (err) {
+    next(err);
   }
 };

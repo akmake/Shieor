@@ -9,8 +9,11 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.Settings
@@ -24,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
@@ -65,7 +69,21 @@ fun StudyReadingScreen(
     val scrollSpeed = remember { mutableIntStateOf(prefs.getInt("scroll_speed", 40)) }
     val isShnayim = studyKey == "shnayimMikra"
     val isTanya   = studyKey == "tanya"
+    val isTehillim = studyKey == "tehillim"
     val connected = remember { context.getSharedPreferences("ShnayimPrefs", Context.MODE_PRIVATE).getBoolean("shnayim_mikra_connected", true) }
+
+    var showCustomChaptersDialog by remember { mutableStateOf(false) }
+
+    if (showCustomChaptersDialog) {
+        CustomTehillimChaptersDialog(
+            currentChapters = state.customChapters,
+            onDismiss = { showCustomChaptersDialog = false },
+            onSave = { chapters ->
+                vm.saveCustomChapters(chapters)
+                showCustomChaptersDialog = false
+            }
+        )
+    }
 
     val listState = rememberLazyListState()
     var autoScrolling by remember { mutableStateOf(false) }
@@ -121,6 +139,11 @@ fun StudyReadingScreen(
                             color = Primary,
                             maxLines = 1
                         )
+                        if (isTehillim) {
+                            IconButton(onClick = { showCustomChaptersDialog = true }) {
+                                Icon(Icons.Default.Add, contentDescription = "הוסף פרקים", tint = Primary)
+                            }
+                        }
                         IconButton(onClick = onSettings) {
                             Icon(Icons.Default.Settings, contentDescription = "הגדרות", tint = Primary)
                         }
@@ -364,4 +387,106 @@ private fun RashiBlock(rashiList: List<Section.RashiItem>, fontSize: Int) {
             }
         }
     }
+}
+
+// ── דיאלוג פרקי תהלים אישיים ───────────────────────────────────────────────
+@OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+@Composable
+fun CustomTehillimChaptersDialog(
+    currentChapters: List<Int>,
+    onDismiss: () -> Unit,
+    onSave: (List<Int>) -> Unit
+) {
+    var chapters by remember { mutableStateOf(currentChapters.toMutableList()) }
+    var inputText by remember { mutableStateOf("") }
+    var inputError by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFDFBF7),
+        title = {
+            Text(
+                "פרקי תהלים אישיים",
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                color = Primary,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+            )
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "הוסף פרקים שיוצגו בכל יום בסוף השיעור היומי",
+                    fontSize = 13.sp,
+                    color = Muted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+                )
+
+                // Existing chapters as chips
+                if (chapters.isNotEmpty()) {
+                    androidx.compose.foundation.layout.FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        chapters.forEach { ch ->
+                            InputChip(
+                                selected = false,
+                                onClick = { chapters = chapters.toMutableList().also { it.remove(ch) } },
+                                label = { Text("פרק $ch", fontSize = 13.sp) },
+                                trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp)) },
+                                colors = InputChipDefaults.inputChipColors(containerColor = Primary.copy(alpha = 0.1f))
+                            )
+                        }
+                    }
+                }
+
+                // Input row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it.filter { c -> c.isDigit() }; inputError = false },
+                        label = { Text("מספר פרק (1-150)", fontSize = 12.sp) },
+                        singleLine = true,
+                        isError = inputError,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        textStyle = LocalTextStyle.current.copy(textDirection = TextDirection.Ltr)
+                    )
+                    Button(
+                        onClick = {
+                            val n = inputText.toIntOrNull()
+                            if (n != null && n in 1..150 && n !in chapters) {
+                                chapters = chapters.toMutableList().also { it.add(n); it.sort() }
+                                inputText = ""
+                            } else {
+                                inputError = true
+                            }
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                    ) { Text("הוסף") }
+                }
+                if (inputError) {
+                    Text("פרק לא תקין (1-150)", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onSave(chapters.toList()) },
+                colors = ButtonDefaults.buttonColors(containerColor = Primary)
+            ) { Text("שמור") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("ביטול", color = Muted) }
+        }
+    )
 }
