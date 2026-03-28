@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.PauseCircle
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.*
@@ -70,11 +71,14 @@ fun MamaarReaderScreen(
 private fun ReaderContent(mamaar: Mamaar, onBack: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("RambamPrefs", Context.MODE_PRIVATE) }
-    val fontSize = remember { mutableIntStateOf(prefs.getInt("text_size_sp", 20)) }
+    
+    // גודל טקסט ייעודי למאמרים (לא משפיע על 'רמב"ם')
+    val fontSize = remember { mutableIntStateOf(prefs.getInt("mamaar_text_size_sp", 20)) }
     val scrollSpeed = remember { mutableIntStateOf(prefs.getInt("scroll_speed", 40)) }
 
     val listState = rememberLazyListState()
     var autoScrolling by remember { mutableStateOf(false) }
+    var showSettings by remember { mutableStateOf(false) }
 
     val scrollKey = "scroll_mamaar_${mamaar.id}"
     var scrollRestored by remember { mutableStateOf(false) }
@@ -130,7 +134,9 @@ private fun ReaderContent(mamaar: Mamaar, onBack: () -> Unit) {
                             color = Primary,
                             maxLines = 1
                         )
-                        Spacer(Modifier.width(48.dp))
+                        IconButton(onClick = { showSettings = true }) {
+                            Icon(Icons.Default.FormatSize, contentDescription = "גודל טקסט", tint = Primary)
+                        }
                     }
                 }
             }
@@ -189,6 +195,39 @@ private fun ReaderContent(mamaar: Mamaar, onBack: () -> Unit) {
             }
         }
     }
+
+    if (showSettings) {
+        AlertDialog(
+            onDismissRequest = { showSettings = false },
+            title = { Text("הגדרות קריאה", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text("גודל טקסט: ${fontSize.intValue}", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
+                    Slider(
+                        value = fontSize.intValue.toFloat(),
+                        onValueChange = {
+                            fontSize.intValue = it.toInt()
+                            prefs.edit().putInt("mamaar_text_size_sp", it.toInt()).apply()
+                        },
+                        valueRange = 12f..48f
+                    )
+                    Spacer(Modifier.height(16.dp))
+                    Text("מהירות גלילה אוטומטית: ${scrollSpeed.intValue}", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth())
+                    Slider(
+                        value = scrollSpeed.intValue.toFloat(),
+                        onValueChange = {
+                            scrollSpeed.intValue = it.toInt()
+                            prefs.edit().putInt("scroll_speed", it.toInt()).apply()
+                        },
+                        valueRange = 10f..100f
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSettings = false }) { Text("סגור", color = Primary) }
+            }
+        )
+    }
 }
 
 @Composable
@@ -222,18 +261,22 @@ private fun MamaarSectionRow(section: MamaarSection, fontSize: Int) {
         .map { it.trim() }
         .filter { it.isNotEmpty() }
 
-    if (paragraphs.isEmpty()) return
+    if (paragraphs.isEmpty() && section.heading.isNullOrBlank()) return
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-        // פסקה ראשונה: אם יש כותרת סעיף — מוטמעת inline באותו צבע (שחור) בדיוק כמו שביקשת
+        // פסקה ראשונה: צמודה חזרה בלי להשמיט
         val firstPara = buildAnnotatedString {
             if (!section.heading.isNullOrBlank()) {
-                withStyle(SpanStyle(color = Color.Black, fontWeight = FontWeight.Bold, fontSize = (fontSize + 2).sp)) {
-                    append(section.heading + "\u00A0")
+                withStyle(SpanStyle(color = Color.Black, fontWeight = FontWeight.Normal, fontSize = fontSize.sp)) {
+                    append(section.heading)
+                    if (paragraphs.isNotEmpty()) append("\u00A0")
                 }
             }
-            append(paragraphs.first())
+            if (paragraphs.isNotEmpty()) {
+                append(paragraphs.first())
+            }
         }
+
         Text(
             text = firstPara,
             fontSize = fontSize.sp,
@@ -246,17 +289,19 @@ private fun MamaarSectionRow(section: MamaarSection, fontSize: Int) {
         )
 
         // שאר הפסקאות — שחור אחיד
-        paragraphs.drop(1).forEach { para ->
-            Text(
-                text = para,
-                fontSize = fontSize.sp,
-                fontFamily = SblHebrew,
-                color = Color.Black,
-                lineHeight = (fontSize * 1.8f).sp,
-                textAlign = TextAlign.Justify,
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-                style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
-            )
+        if (paragraphs.size > 1) {
+            paragraphs.drop(1).forEach { para ->
+                Text(
+                    text = para,
+                    fontSize = fontSize.sp,
+                    fontFamily = SblHebrew,
+                    color = Color.Black,
+                    lineHeight = (fontSize * 1.8f).sp,
+                    textAlign = TextAlign.Justify,
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+                )
+            }
         }
     }
 }

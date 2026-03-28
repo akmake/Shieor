@@ -224,7 +224,7 @@ private fun StudyCard(study: Study, onClick: () -> Unit) {
                 if (!study.label.isNullOrEmpty()) {
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = study.label, 
+                        text = if (study.key == "tehillim") HebrewDate.formatTehillimLabel(study.label) else study.label,
                         fontSize = 13.sp, 
                         color = Muted, 
                         maxLines = 1

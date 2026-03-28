@@ -27,7 +27,7 @@ enum class ExtractionMode { SERVER, LOCAL }
 sealed class UploadState {
     object Idle : UploadState()
     data class Extracting(val page: Int = 0, val total: Int = 0) : UploadState()
-    data class Preview(val rawText: String, val pageCount: Int) : UploadState()
+    data class Preview(val pageCount: Int) : UploadState()
     object Uploading : UploadState()
     object Success   : UploadState()
     data class Error(val message: String) : UploadState()
@@ -39,21 +39,24 @@ class ArticleUploadViewModel(app: Application) : AndroidViewModel(app) {
     val state = _state.asStateFlow()
 
     val title          = MutableStateFlow("")
+    val rawText        = MutableStateFlow("") // הוספנו סטייט לטקסט כדי שיוכל להיערך
     val extractionMode = MutableStateFlow(ExtractionMode.LOCAL)
 
     fun onPdfPicked(uri: Uri) {
         _state.value = UploadState.Extracting()
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                val (rawText, pageCount) = when (extractionMode.value) {
+                val (extractedText, pageCount) = when (extractionMode.value) {
                     ExtractionMode.SERVER -> extractViaServer(uri)
                     ExtractionMode.LOCAL  -> extractLocally(uri)
                 }
 
-                _state.value = if (rawText.isBlank())
-                    UploadState.Error("לא נמצא טקסט בקובץ")
-                else
-                    UploadState.Preview(rawText, pageCount)
+                if (extractedText.isBlank()) {
+                    _state.value = UploadState.Error("לא נמצא טקסט בקובץ")
+                } else {
+                    rawText.value = extractedText
+                    _state.value = UploadState.Preview(pageCount)
+                }
 
             } catch (e: Exception) {
                 _state.value = UploadState.Error("שגיאה בחילוץ: ${e.message}")
@@ -109,18 +112,19 @@ class ArticleUploadViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val finalTitle = title.value.trim().ifEmpty { "מאמר משלי" }
+                val finalText  = rawText.value.trim()
                 
                 if (uploadToServer) {
                     RetrofitClient.articleUploadService.saveArticle(
                         SaveArticleBody(
-                            rawText   = preview.rawText,
+                            rawText   = finalText,
                             pageCount = preview.pageCount,
                             title     = finalTitle
                         )
                     )
                 } else {
                     // שמירה אופליין מקומית בלבד
-                    saveToLocalLibrary(finalTitle, preview.rawText, preview.pageCount)
+                    saveToLocalLibrary(finalTitle, finalText, preview.pageCount)
                 }
                 
                 _state.value = UploadState.Success

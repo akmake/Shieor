@@ -37,6 +37,11 @@ fun MamaarimScreen(
 ) {
     val state by vm.state.collectAsState()
 
+    var mamaarToEdit by remember { mutableStateOf<Mamaar?>(null) }
+    var editTitleText by remember { mutableStateOf("") }
+    
+    var mamaarToDelete by remember { mutableStateOf<Mamaar?>(null) }
+
     // Show error snackbar
     val snackHost = remember { SnackbarHostState() }
     LaunchedEffect(state.error) {
@@ -103,7 +108,12 @@ fun MamaarimScreen(
                     items(state.mamaarim, key = { it.id }) { mamaar ->
                         MamaarCard(
                             mamaar  = mamaar,
-                            onClick  = { onOpen(mamaar.id) }
+                            onClick  = { onOpen(mamaar.id) },
+                            onEdit = { 
+                                editTitleText = mamaar.title
+                                mamaarToEdit = mamaar 
+                            },
+                            onDelete = { mamaarToDelete = mamaar }
                         )
                     }
                 }
@@ -125,7 +135,52 @@ fun MamaarimScreen(
             }
         }
     }
-}
+    // הדיאלוגים לעריכת שם ומחיקה מחכים כאן:
+    mamaarToEdit?.let { mamaar ->
+        AlertDialog(
+            onDismissRequest = { mamaarToEdit = null },
+            title = { Text("עריכת שם המאמר", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+            text = {
+                OutlinedTextField(
+                    value = editTitleText,
+                    onValueChange = { editTitleText = it },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (editTitleText.isNotBlank()) {
+                        vm.updateMamaarTitle(mamaar.id, editTitleText.trim())
+                    }
+                    mamaarToEdit = null
+                }) {
+                    Text("שמור", color = Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mamaarToEdit = null }) { Text("ביטול", color = Muted) }
+            }
+        )
+    }
+
+    mamaarToDelete?.let { mamaar ->
+        AlertDialog(
+            onDismissRequest = { mamaarToDelete = null },
+            title = { Text("מחיקת מאמר", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+            text = { Text("האם אתה בטוח שברצונך למחוק את המאמר '${mamaar.title}'?\nפעולה זו אינה ניתנת לביטול.", textAlign = TextAlign.Right) },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteMamaar(mamaar.id)
+                    mamaarToDelete = null
+                }) {
+                    Text("מחק", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mamaarToDelete = null }) { Text("ביטול", color = Muted) }
+            }
+        )
+    }}
 
 // ─── sub-composables ─────────────────────────────────────────────────────────
 
@@ -171,7 +226,7 @@ private fun EmptyState(onRefresh: () -> Unit) {
 }
 
 @Composable
-private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit) {
+private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
     Surface(
         modifier      = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
         shape         = RoundedCornerShape(12.dp),
@@ -179,7 +234,7 @@ private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit) {
         color         = CardBg
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
@@ -200,12 +255,23 @@ private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit) {
                     overflow   = TextOverflow.Ellipsis
                 )
                 Spacer(Modifier.height(4.dp))
-                Text(
-                    text     = formatDate(mamaar.createdAt),
-                    fontSize = 12.sp,
-                    color    = Muted
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text     = formatDate(mamaar.createdAt),
+                        fontSize = 12.sp,
+                        color    = Muted
+                    )
+                    Spacer(Modifier.weight(1f))
+                    // עריכה ומחיקה יופיעו רק עבור מאמרים מקומיים (local_) או כל מאמר? לפי הבקשה נוסיף לכולם, או לפחות נתיר זאת
+                    IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Edit, contentDescription = "ערוך", tint = Muted, modifier = Modifier.size(16.dp))
+                    }
+                    IconButton(onClick = onDelete, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Delete, contentDescription = "מחק", tint = Muted, modifier = Modifier.size(16.dp))
+                    }
+                }
             }
+            Spacer(Modifier.width(8.dp))
             Icon(Icons.Default.ChevronLeft, contentDescription = null, tint = Primary, modifier = Modifier.size(20.dp))
         }
     }

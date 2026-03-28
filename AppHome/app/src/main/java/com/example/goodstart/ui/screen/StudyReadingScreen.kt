@@ -437,7 +437,7 @@ fun CustomTehillimChaptersDialog(
                             InputChip(
                                 selected = false,
                                 onClick = { chapters = chapters.toMutableList().also { it.remove(ch) } },
-                                label = { Text("פרק $ch", fontSize = 13.sp) },
+                                label = { Text(com.example.goodstart.util.HebrewDate.formatTehillimLabel(ch.toString()), fontSize = 13.sp) },
                                 trailingIcon = { Icon(Icons.Default.Close, null, modifier = Modifier.size(14.dp)) },
                                 colors = InputChipDefaults.inputChipColors(containerColor = Primary.copy(alpha = 0.1f))
                             )

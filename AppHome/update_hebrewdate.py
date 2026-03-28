@@ -1,4 +1,4 @@
-package com.example.goodstart.util
+content = """package com.example.goodstart.util
 
 import com.kosherjava.zmanim.hebrewcalendar.HebrewDateFormatter
 import com.kosherjava.zmanim.hebrewcalendar.JewishCalendar
@@ -19,7 +19,7 @@ object HebrewDate {
         val hdf = HebrewDateFormatter().apply { isHebrewFormat = true }
         val full = hdf.format(jc)             // "ג ניסן תשפ״ו"        
         val parts = full.split(" ", limit = 3)
-        if (parts.size == 3) "${parts[0]} ${parts[1]} \u05D4${parts[2]}" else full
+        if (parts.size == 3) "${parts[0]} ${parts[1]} \\u05D4${parts[2]}" else full
     } catch (_: Exception) { isoDate }
 
     fun getDayName(isoDate: String): String = try {
@@ -47,15 +47,16 @@ object HebrewDate {
      */
     fun formatTehillimLabel(label: String?): String {
         if (label.isNullOrEmpty()) return ""
-        val regex = Regex("(?:פרק\\s*)?(\\d{1,3})")
+        val regex = Regex("(?:פרק\\\\s*)?(\\\\d{1,3})")
         return regex.replace(label) { matchResult ->
             val num = matchResult.groupValues[1].toIntOrNull()
             if (num != null && num in 1..150) {
                 try {
                     val heNum = HebrewDateFormatter().apply { 
                         isHebrewFormat = true
+                        isUseGeresh = false
                     }.formatHebrewNumber(num)
-                    heNum.replace("\"", "").replace("״", "").replace("'", "").replace("׳", "")
+                    heNum.replace("\\\"", "").replace("״", "").replace("'", "").replace("׳", "")
                 } catch (_: Exception) {
                     num.toString()
                 }
@@ -65,3 +66,6 @@ object HebrewDate {
         }.replace("פרק ", "").replace("פרקים ", "").replace("פרק", "")
     }
 }
+"""
+with open('app/src/main/java/com/example/goodstart/util/HebrewDate.kt', 'w', encoding='utf-8') as f:
+    f.write(content)

@@ -34,6 +34,7 @@ fun ArticleUploadScreen(
 ) {
     val state          by vm.state.collectAsState()
     val title          by vm.title.collectAsState()
+    val rawText        by vm.rawText.collectAsState()
     val extractionMode by vm.extractionMode.collectAsState()
 
     // ניווט אחרי הצלחה
@@ -214,26 +215,26 @@ fun ArticleUploadScreen(
 
                         // מידע
                         Text(
-                            text     = "${s.pageCount} עמודים · ${s.rawText.length} תווים",
+                            text     = "${s.pageCount} עמודים · ${rawText.length} תווים",
                             fontSize = 13.sp,
                             color    = Muted
                         )
 
-                        // תצוגה מקדימה
-                        Surface(
-                            modifier        = Modifier.fillMaxWidth(),
-                            shape           = RoundedCornerShape(12.dp),
-                            color           = CardBg,
-                            shadowElevation = 1.dp
-                        ) {
-                            Text(
-                                text     = s.rawText.take(600) + if (s.rawText.length > 600) "…" else "",
-                                modifier = Modifier.padding(14.dp),
+                        // תצוגה מקדימה - עכשיו ניתן לעריכה חופשית!
+                        OutlinedTextField(
+                            value         = rawText,
+                            onValueChange = { vm.rawText.value = it },
+                            label         = { Text("טקסט המאמר (ניתן לעריכה)") },
+                            modifier      = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 200.dp, max = 350.dp),
+                            textStyle     = LocalTextStyle.current.copy(
                                 fontSize = 14.sp,
                                 color    = Ink,
                                 lineHeight = 22.sp
-                            )
-                        }
+                            ),
+                            shape         = RoundedCornerShape(12.dp)
+                        )
 
                         Row(
                             modifier            = Modifier.fillMaxWidth(),

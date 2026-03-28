@@ -166,6 +166,45 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
         try { File(cacheDir, "text_$id.txt").writeText(text) } catch (_: Exception) {}
     }
 
+    // ─── Actions ─────────────────────────────────────────────────────────────
+
+    fun deleteMamaar(id: String) {
+        viewModelScope.launch {
+            val file = File(cacheDir, "list.json")
+            val localDtos = try {
+                if (file.exists()) {
+                    val type = object : TypeToken<List<ArticleDto>>() {}.type
+                    val existing: List<ArticleDto> = gson.fromJson(file.readText(), type) ?: emptyList()
+                    existing.filter { it.id != id }
+                } else emptyList()
+            } catch (e: Exception) { emptyList() }
+            saveListCache(localDtos)
+            
+            // Delete text cache
+            File(cacheDir, "text_$id.txt").delete()
+            loadAll() // refresh state
+        }
+    }
+
+    fun updateMamaarTitle(id: String, newTitle: String) {
+        viewModelScope.launch {
+            val file = File(cacheDir, "list.json")
+            val localDtos = try {
+                if (file.exists()) {
+                    val type = object : TypeToken<List<ArticleDto>>() {}.type
+                    val list = (gson.fromJson<List<ArticleDto>>(file.readText(), type) ?: emptyList()).toMutableList()
+                    val idx = list.indexOfFirst { it.id == id }
+                    if (idx != -1) {
+                        list[idx] = list[idx].copy(title = newTitle)
+                    }
+                    list
+                } else emptyList()
+            } catch (e: Exception) { emptyList() }
+            saveListCache(localDtos)
+            loadAll() // refresh state
+        }
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private fun buildMamaar(id: String, text: String, title: String = ""): Mamaar {
@@ -202,10 +241,8 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
             val start = matches[i].range.first
             val end   = if (i + 1 < matches.size) matches[i + 1].range.first else text.length
             val chunk = text.substring(start, end).trim()
-            val lines   = chunk.lines()
-            val heading = lines.firstOrNull()?.trim()
-            val body    = lines.drop(1).joinToString("\n").trim()
-            sections.add(MamaarSection(heading, body))
+            // אין צורך לפצל לכותרת וגוף אם איננו מדגישים כותרות בנפרד (וזה מונע בליעת טקסט)
+            sections.add(MamaarSection(null, chunk))
         }
 
         return sections.ifEmpty { listOf(MamaarSection(null, text.trim())) }
