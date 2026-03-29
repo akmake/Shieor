@@ -62,6 +62,6 @@ app.get('*', (req, res) => {
 // טיפול גלובלי בשגיאות השרת
 app.use(globalErrorHandler);
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

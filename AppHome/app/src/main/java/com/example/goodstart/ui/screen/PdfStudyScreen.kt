@@ -385,26 +385,9 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                         Text(
                             text = "עמוד ${currentBook.currentPage + 1}",
                             color = Color.White,
-                            fontSize = 14.sp,
+                            fontSize = 16.sp,
                             modifier = Modifier.clickable { showPageJumpDialog = true }
                         )
-                        if (currentBook.totalPages > 1) {
-                            Slider(
-                                value = currentBook.currentPage.toFloat(),
-                                onValueChange = { newVal ->
-                                    val page = newVal.toInt().coerceIn(0, currentBook.totalPages - 1)
-                                    vm.goToPage(page)
-                                    scale = 1f; offsetX = 0f; offsetY = 0f
-                                },
-                                valueRange = 0f..(currentBook.totalPages - 1).toFloat(),
-                                modifier = Modifier.fillMaxWidth().height(24.dp),
-                                colors = SliderDefaults.colors(
-                                    thumbColor = Primary,
-                                    activeTrackColor = Primary,
-                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
-                                )
-                            )
-                        }
                     }
 
                     // האחרון בשורה מופיע משמאל — עמוד הבא (שמאל = קדימה בעברית)
