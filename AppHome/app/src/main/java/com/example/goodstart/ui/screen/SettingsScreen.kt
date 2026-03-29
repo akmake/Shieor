@@ -20,8 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.goodstart.cache.StudyCache
 import com.example.goodstart.network.RetrofitClient
+import com.example.goodstart.sync.UserManager
 import com.example.goodstart.ui.theme.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -39,6 +42,9 @@ fun SettingsScreen(onBack: () -> Unit) {
     var cacheInfo by remember { mutableStateOf("שמורים ${StudyCache.cachedCount(context)} ימים") }
     var downloadProgress by remember { mutableStateOf("") }
     var downloading by remember { mutableStateOf(false) }
+    var userId by remember { mutableStateOf(UserManager.getUserId(context) ?: "טוען...") }
+    var loginCode by remember { mutableStateOf("") }
+    var loginStatus by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -155,7 +161,68 @@ fun SettingsScreen(onBack: () -> Unit) {
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)
                 ) { Text("הורד 30 ימים") }
             }
+            // ── User Identity Card ──
+            SettingsCard {
+                Text("מספר משתמש", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 15.sp)
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "המספר שלך: $userId",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "שמור את המספר הזה — הוא מסנכרן את כל הנתונים שלך בין מכשירים.",
+                    fontSize = 12.sp,
+                    color = Muted
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = LineColor.copy(alpha = 0.5f))
+                Text("כניסה ממכשיר אחר", fontWeight = FontWeight.SemiBold, color = Ink, fontSize = 14.sp)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = loginCode,
+                    onValueChange = { loginCode = it.filter { c -> c.isDigit() }.take(8) },
+                    label = { Text("הזן מספר משתמש") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+                if (loginStatus.isNotEmpty()) {
+                    Text(loginStatus, fontSize = 13.sp, color = if (loginStatus.startsWith("✓")) Primary else Color.Red, modifier = Modifier.padding(top = 4.dp))
+                }
+                Spacer(Modifier.height(8.dp))
+                Button(
+                    onClick = {
+                        if (loginCode.length == 8) {
+                            scope.launch {
+                                loginStatus = "מתחבר..."
+                                val ok = withContext(Dispatchers.IO) {
+                                    UserManager.loginWithCode(context, loginCode)
+                                }
+                                if (ok) {
+                                    userId = loginCode
+                                    loginStatus = "✓ הנתונים סונכרנו בהצלחה!"
+                                } else {
+                                    loginStatus = "מספר לא נמצא. בדוק ונסה שוב."
+                                }
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = loginCode.length == 8,
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary)
+                ) { Text("סנכרן מהמספר הזה") }
+            }
         }
+    }
+
+    // Ensure user ID is available
+    LaunchedEffect(Unit) {
+        if (userId == "טוען...") {
+            val id = withContext(Dispatchers.IO) { UserManager.ensureRegistered(context) }
+            userId = id ?: "לא זמין (אין חיבור)"        }
     }
 }
 

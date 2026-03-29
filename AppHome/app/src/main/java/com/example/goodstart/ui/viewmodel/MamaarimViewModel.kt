@@ -94,11 +94,9 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
                         withContext(Dispatchers.Main) { _state.update { it.copy(isLoading = false) } }
                     }
                 } catch (e: Exception) {
+                    // Offline — cache is already shown, just hide spinner
                     withContext(Dispatchers.Main) {
-                        if (cached.isEmpty())
-                            _state.update { it.copy(error = "אין חיבור לשרת", isLoading = false) }
-                        else
-                            _state.update { it.copy(isLoading = false) }
+                        _state.update { it.copy(isLoading = false) }
                     }
                 }
             }

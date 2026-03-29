@@ -213,10 +213,11 @@ fun ZmanimScreen(
             vm            = vm,
             onDismiss     = { selectedZman = null },
             onAlarmSetResult = { success ->
-                if (!success) {
-                    scope.launch {
-                        snackbarHostState.showSnackbar("הזמן כבר עבר — לא ניתן לקבוע התראה")
-                    }
+                scope.launch {
+                    snackbarHostState.showSnackbar(
+                        if (success) "ההתראה נקבעה בהצלחה"
+                        else "לא ניתן לקבוע התראה — בדוק הרשאות שעון מעורר"
+                    )
                 }
             }
         )

@@ -5,6 +5,9 @@ import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.goodstart.ZmanimAlarmReceiver
@@ -13,6 +16,7 @@ import com.example.goodstart.network.RetrofitClient
 import com.example.goodstart.network.ZmanDto
 import com.example.goodstart.network.ZmanimDay
 import com.example.goodstart.util.HebrewDate
+import com.google.android.gms.location.LocationServices
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +26,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
+import kotlin.math.*
 
 data class ZmanEntry(val label: String, val time: String, val timeMillis: Long)
 
@@ -35,7 +40,7 @@ data class ZmanimState(
     val syncing: Boolean = false   // background download in progress
 )
 
-private data class CityInfo(val name: String, val locationId: Int)
+private data class CityInfo(val name: String, val locationId: Int, val lat: Double, val lng: Double)
 
 private val ZMANIM_ORDER = listOf(
     "AlosHashachar"    to "עלות השחר",
@@ -60,10 +65,10 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
     val cityNames = listOf("תל אביב", "ירושלים", "חיפה", "באר שבע")
 
     private val cityInfos = listOf(
-        CityInfo("תל אביב", 531),
-        CityInfo("ירושלים", 247),
-        CityInfo("חיפה",    689),
-        CityInfo("באר שבע", 688)
+        CityInfo("תל אביב", 531, 32.0853, 34.7818),
+        CityInfo("ירושלים", 247, 31.7683, 35.2137),
+        CityInfo("חיפה",    689, 32.7940, 34.9896),
+        CityInfo("באר שבע", 688, 31.2530, 34.7915)
     )
 
     private val alarmPrefs = application.getSharedPreferences("ZmanimAlarms", Context.MODE_PRIVATE)
@@ -78,11 +83,42 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
             .getInt("selected_city", 0).coerceIn(0, cityInfos.lastIndex)
         if (savedCity != 0) _state.value = _state.value.copy(selectedCity = savedCity)
         loadAlarms()
+        autoDetectCity()
         viewModelScope.launch(Dispatchers.IO) {
             loadFileCacheIntoMemory()
             withContext(Dispatchers.Main) { fetch() }
             syncMissingCities()
         }
+    }
+
+    /** Detect nearest city via GPS and auto-select it. */
+    private fun autoDetectCity() {
+        val ctx = getApplication<Application>()
+        if (ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_FINE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED &&
+            ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.ACCESS_COARSE_LOCATION)
+            != PackageManager.PERMISSION_GRANTED) return
+
+        try {
+            val fusedClient = LocationServices.getFusedLocationProviderClient(ctx)
+            fusedClient.lastLocation.addOnSuccessListener { loc: Location? ->
+                if (loc == null) return@addOnSuccessListener
+                val nearest = cityInfos.indices.minByOrNull { i ->
+                    haversineKm(loc.latitude, loc.longitude, cityInfos[i].lat, cityInfos[i].lng)
+                } ?: return@addOnSuccessListener
+                if (nearest != _state.value.selectedCity) {
+                    selectCity(nearest)
+                }
+            }
+        } catch (_: Exception) { /* no GPS available — keep manual selection */ }
+    }
+
+    private fun haversineKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val r = 6371.0
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2).pow(2) + cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) * sin(dLon / 2).pow(2)
+        return r * 2 * asin(sqrt(a))
     }
 
     // ── public API ───────────────────────────────────────────────────────────
@@ -103,15 +139,22 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         fetch()
     }
 
-    /** Returns true if alarm was scheduled, false if time is already past. */
+    /** Returns true if alarm was scheduled, false only if unable to schedule at all. */
     fun scheduleAlarm(zman: ZmanEntry, config: AlarmConfig): Boolean {
-        val ctx      = getApplication<Application>()
-        val offsetMs = config.offsetMinutes * 60_000L
-        val alarmMs  = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
-        if (alarmMs <= System.currentTimeMillis()) return false
-
+        val ctx = getApplication<Application>()
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) return false
+
+        val offsetMs = config.offsetMinutes * 60_000L
+        var alarmMs  = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
+
+        // If today's time already passed, find tomorrow's zman and schedule for that
+        if (alarmMs <= System.currentTimeMillis()) {
+            val tomorrowMs = findZmanMillisForTomorrow(zman.label)
+            if (tomorrowMs <= 0L) return false
+            alarmMs = if (config.isBefore) tomorrowMs - offsetMs else tomorrowMs + offsetMs
+            if (alarmMs <= System.currentTimeMillis()) return false
+        }
 
         val intent = Intent(ctx, ZmanimAlarmReceiver::class.java).apply {
             putExtra(ZmanimAlarmReceiver.EXTRA_ZMAN_LABEL,   zman.label)
@@ -131,6 +174,25 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
             )
             true
         } catch (_: SecurityException) { false }
+    }
+
+    /** Look up tomorrow's zman millis from the memory cache. */
+    private fun findZmanMillisForTomorrow(zmanLabel: String): Long {
+        val type = ZMANIM_ORDER.firstOrNull { it.second == zmanLabel }?.first ?: return 0L
+        val cityInfo = cityInfos[_state.value.selectedCity]
+        val tomorrow = Calendar.getInstance(TimeZone.getTimeZone("Asia/Jerusalem")).apply {
+            add(Calendar.DAY_OF_YEAR, 1)
+        }
+        val tomorrowStr = "%04d-%02d-%02d".format(
+            tomorrow.get(Calendar.YEAR),
+            tomorrow.get(Calendar.MONTH) + 1,
+            tomorrow.get(Calendar.DAY_OF_MONTH)
+        )
+        val dayZmanim = synchronized(memCache) {
+            memCache[cityInfo.locationId]?.get(tomorrowStr)
+        } ?: return 0L
+        val dto = dayZmanim.find { it.type == type } ?: return 0L
+        return timeStringToMillis(tomorrowStr, dto.time)
     }
 
     fun cancelAlarm(zmanLabel: String) {
