@@ -5,7 +5,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -19,6 +21,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextDirection
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.goodstart.model.Mamaar
 import com.example.goodstart.ui.theme.*
@@ -41,6 +44,9 @@ fun MamaarimScreen(
     var editTitleText by remember { mutableStateOf("") }
     
     var mamaarToDelete by remember { mutableStateOf<Mamaar?>(null) }
+
+    var mamaarToEditContent by remember { mutableStateOf<Mamaar?>(null) }
+    var editContentText by remember { mutableStateOf("") }
 
     // Show error snackbar
     val snackHost = remember { SnackbarHostState() }
@@ -113,6 +119,10 @@ fun MamaarimScreen(
                                 editTitleText = mamaar.title
                                 mamaarToEdit = mamaar 
                             },
+                            onEditContent = {
+                                editContentText = vm.loadRawText(mamaar.id) ?: ""
+                                mamaarToEditContent = mamaar
+                            },
                             onDelete = { mamaarToDelete = mamaar }
                         )
                     }
@@ -159,6 +169,40 @@ fun MamaarimScreen(
             },
             dismissButton = {
                 TextButton(onClick = { mamaarToEdit = null }) { Text("ביטול", color = Muted) }
+            }
+        )
+    }
+
+    mamaarToEditContent?.let { mamaar ->
+        AlertDialog(
+            onDismissRequest = { mamaarToEditContent = null },
+            title = { Text("עריכת תוכן המאמר", textAlign = TextAlign.Right, modifier = Modifier.fillMaxWidth()) },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp)) {
+                    OutlinedTextField(
+                        value = editContentText,
+                        onValueChange = { editContentText = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        textStyle = LocalTextStyle.current.copy(
+                            fontSize = 14.sp,
+                            textAlign = TextAlign.Right
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.updateMamaarContent(mamaar.id, editContentText)
+                    mamaarToEditContent = null
+                }) {
+                    Text("שמור", color = Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mamaarToEditContent = null }) { Text("ביטול", color = Muted) }
             }
         )
     }
@@ -226,7 +270,7 @@ private fun EmptyState(onRefresh: () -> Unit) {
 }
 
 @Composable
-private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit, onEdit: () -> Unit, onEditContent: () -> Unit, onDelete: () -> Unit) {
     Surface(
         modifier      = Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable(onClick = onClick),
         shape         = RoundedCornerShape(12.dp),
@@ -263,6 +307,9 @@ private fun MamaarCard(mamaar: Mamaar, onClick: () -> Unit, onEdit: () -> Unit, 
                     )
                     Spacer(Modifier.weight(1f))
                     // עריכה ומחיקה יופיעו רק עבור מאמרים מקומיים (local_) או כל מאמר? לפי הבקשה נוסיף לכולם, או לפחות נתיר זאת
+                    IconButton(onClick = onEditContent, modifier = Modifier.size(28.dp)) {
+                        Icon(Icons.Default.Article, contentDescription = "ערוך תוכן", tint = Muted, modifier = Modifier.size(16.dp))
+                    }
                     IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Default.Edit, contentDescription = "ערוך", tint = Muted, modifier = Modifier.size(16.dp))
                     }

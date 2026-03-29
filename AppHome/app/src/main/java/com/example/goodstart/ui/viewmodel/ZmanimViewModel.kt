@@ -139,11 +139,15 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         fetch()
     }
 
-    /** Returns true if alarm was scheduled, false only if unable to schedule at all. */
+    /** Returns true if alarm was scheduled or queued, false only if unable to schedule at all. */
     fun scheduleAlarm(zman: ZmanEntry, config: AlarmConfig): Boolean {
         val ctx = getApplication<Application>()
         val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) return false
+
+        // בודק הרשאת שעון מעורר מדויק באנדרואיד 12 ומעלה - נחזיר שגיאה אם אין הרשאה, התצוגה תטפל בבקשת ההרשאה
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
+            return false
+        }
 
         val offsetMs = config.offsetMinutes * 60_000L
         var alarmMs  = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
@@ -151,9 +155,16 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         // If today's time already passed, find tomorrow's zman and schedule for that
         if (alarmMs <= System.currentTimeMillis()) {
             val tomorrowMs = findZmanMillisForTomorrow(zman.label)
-            if (tomorrowMs <= 0L) return false
-            alarmMs = if (config.isBefore) tomorrowMs - offsetMs else tomorrowMs + offsetMs
-            if (alarmMs <= System.currentTimeMillis()) return false
+            if (tomorrowMs > 0L) {
+                val nextAlarmMs = if (config.isBefore) tomorrowMs - offsetMs else tomorrowMs + offsetMs
+                if (nextAlarmMs > System.currentTimeMillis()) {
+                    alarmMs = nextAlarmMs
+                }
+            } else {
+                // If we don't have tomorrow's zman in cache, we just add 24 hours approximately 
+                // so the alarm is set and rescheduler can fix it later
+                alarmMs += 24 * 60 * 60 * 1000L
+            }
         }
 
         val intent = Intent(ctx, ZmanimAlarmReceiver::class.java).apply {

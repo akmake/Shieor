@@ -77,21 +77,21 @@ fun AlarmSetupBottomSheet(
         ) {
             // ── Header ──────────────────────────────────────────────────────
             Text(
-                text = "שעון מעורר — ${zman.label}",
+                text = "שעון מעורר קבוע לזמן הלכתי",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
                 color = Primary,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(4.dp))
-            Text("זמן: ${zman.time}", fontSize = 15.sp, color = Color.Gray)
+            Text("התראה יומית קולקטיבית לזמן: ${zman.label}", fontSize = 15.sp, color = Color.Gray, textAlign = TextAlign.Center)
             Spacer(Modifier.height(4.dp))
 
-            // Live preview of the actual alarm time
+            // Live preview of the actual alarm time (indicative for current day)
             val offsetMs    = offsetMinutes * 60_000L
             val alarmTimeMs = if (isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
             Text(
-                text = "התראה תצלצל בשעה: ${fmt.format(Date(alarmTimeMs))}",
+                text = "השעה היום/מחר תהיה: ${fmt.format(Date(alarmTimeMs))}",
                 fontSize = 14.sp,
                 color = Primary,
                 fontWeight = FontWeight.Medium

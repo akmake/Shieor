@@ -14,6 +14,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowForward
@@ -31,9 +34,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -194,30 +202,94 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
         var offsetX by remember { mutableStateOf(0f) }
         var offsetY by remember { mutableStateOf(0f) }
         var showControls by remember { mutableStateOf(true) }
+        var showPageJumpDialog by remember { mutableStateOf(false) }
+        var pageJumpText by remember { mutableStateOf("") }
+        var containerSize by remember { mutableStateOf(IntSize.Zero) }
+
+        // Page jump dialog
+        if (showPageJumpDialog) {
+            pageJumpText = (currentBook.currentPage + 1).toString()
+            AlertDialog(
+                onDismissRequest = { showPageJumpDialog = false },
+                title = { Text("מעבר לעמוד") },
+                text = {
+                    Column {
+                        Text("הקלד מספר עמוד (1-${currentBook.totalPages})")
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = pageJumpText,
+                            onValueChange = { pageJumpText = it.filter { c -> c.isDigit() } },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Go
+                            ),
+                            keyboardActions = KeyboardActions(onGo = {
+                                val page = pageJumpText.toIntOrNull()
+                                if (page != null && page in 1..currentBook.totalPages) {
+                                    vm.goToPage(page - 1)
+                                    scale = 1f; offsetX = 0f; offsetY = 0f
+                                }
+                                showPageJumpDialog = false
+                            }),
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        val page = pageJumpText.toIntOrNull()
+                        if (page != null && page in 1..currentBook.totalPages) {
+                            vm.goToPage(page - 1)
+                            scale = 1f; offsetX = 0f; offsetY = 0f
+                        }
+                        showPageJumpDialog = false
+                    }) { Text("עבור", color = Primary) }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showPageJumpDialog = false }) { Text("ביטול") }
+                }
+            )
+        }
 
         Box(modifier = Modifier.fillMaxSize().background(Color.Black)) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .onSizeChanged { containerSize = it }
                     // גלילה בין עמודים + זום — ללא ripple
                     .pointerInput(Unit) {
                         var swipeAccX = 0f
                         detectTransformGestures { _, pan, zoom, _ ->
                             if (zoom != 1f) {
                                 // מחווה של זום
-                                scale = (scale * zoom).coerceIn(1f, 5f)
+                                val newScale = (scale * zoom).coerceIn(1f, 5f)
+                                scale = newScale
                                 if (scale > 1f) {
                                     offsetX += pan.x
                                     offsetY += pan.y
+                                } else {
+                                    offsetX = 0f
+                                    offsetY = 0f
                                 }
+                                // Clamp offsets to keep image within bounds
+                                val maxOffsetX = (containerSize.width * (scale - 1f)) / 2f
+                                val maxOffsetY = (containerSize.height * (scale - 1f)) / 2f
+                                offsetX = offsetX.coerceIn(-maxOffsetX, maxOffsetX)
+                                offsetY = offsetY.coerceIn(-maxOffsetY, maxOffsetY)
                                 swipeAccX = 0f
                             } else if (scale > 1f) {
-                                // גרירה כשמוזם
+                                // גרירה כשמוזם — עם הגבלת גבולות
                                 offsetX += pan.x
                                 offsetY += pan.y
+                                val maxOffsetX = (containerSize.width * (scale - 1f)) / 2f
+                                val maxOffsetY = (containerSize.height * (scale - 1f)) / 2f
+                                offsetX = offsetX.coerceIn(-maxOffsetX, maxOffsetX)
+                                offsetY = offsetY.coerceIn(-maxOffsetY, maxOffsetY)
                                 swipeAccX = 0f
                             } else {
-                                // החלקה לשינוי עמוד (scale = 1)
+                                // החלקה לשינוי עמוד (scale = 1) — בלי תזוזה צידית!
                                 // ב-RTL: ימינה = עמוד קודם, שמאלה = עמוד הבא
                                 swipeAccX += pan.x
                                 if (swipeAccX > 120f) {
@@ -242,6 +314,7 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                     Image(
                         bitmap = state.currentBitmap!!.asImageBitmap(),
                         contentDescription = "PDF Page",
+                        contentScale = ContentScale.Fit,
                         modifier = Modifier
                             .fillMaxSize()
                             .graphicsLayer(
@@ -278,7 +351,8 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                     Text(
                         text = "${currentBook.currentPage + 1}/${currentBook.totalPages}",
                         color = Color.White,
-                        fontSize = 16.sp
+                        fontSize = 16.sp,
+                        modifier = Modifier.clickable { showPageJumpDialog = true }
                     )
                 }
 
@@ -288,7 +362,7 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                         .fillMaxWidth()
                         .background(Color.Black.copy(alpha = 0.6f))
                         .navigationBarsPadding()
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -304,7 +378,34 @@ fun PdfStudyScreen(onBack: () -> Unit, vm: PdfStudyViewModel = viewModel()) {
                         Icon(Icons.Default.ChevronRight, "Prev Page", tint = Color.White)
                     }
 
-                    Text("עמוד ${currentBook.currentPage + 1}", color = Color.White, fontSize = 16.sp)
+                    Column(
+                        modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "עמוד ${currentBook.currentPage + 1}",
+                            color = Color.White,
+                            fontSize = 14.sp,
+                            modifier = Modifier.clickable { showPageJumpDialog = true }
+                        )
+                        if (currentBook.totalPages > 1) {
+                            Slider(
+                                value = currentBook.currentPage.toFloat(),
+                                onValueChange = { newVal ->
+                                    val page = newVal.toInt().coerceIn(0, currentBook.totalPages - 1)
+                                    vm.goToPage(page)
+                                    scale = 1f; offsetX = 0f; offsetY = 0f
+                                },
+                                valueRange = 0f..(currentBook.totalPages - 1).toFloat(),
+                                modifier = Modifier.fillMaxWidth().height(24.dp),
+                                colors = SliderDefaults.colors(
+                                    thumbColor = Primary,
+                                    activeTrackColor = Primary,
+                                    inactiveTrackColor = Color.White.copy(alpha = 0.3f)
+                                )
+                            )
+                        }
+                    }
 
                     // האחרון בשורה מופיע משמאל — עמוד הבא (שמאל = קדימה בעברית)
                     FilledIconButton(

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.goodstart.ui.theme.*
 import com.example.goodstart.ui.viewmodel.ZmanEntry
@@ -38,6 +39,7 @@ fun ZmanimScreen(
     var selectedZman     by remember { mutableStateOf<ZmanEntry?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope            = rememberCoroutineScope()
+    val context          = LocalContext.current
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -213,11 +215,29 @@ fun ZmanimScreen(
             vm            = vm,
             onDismiss     = { selectedZman = null },
             onAlarmSetResult = { success ->
+                val am = context.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager
+                val needsPermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()
+                
                 scope.launch {
-                    snackbarHostState.showSnackbar(
-                        if (success) "ההתראה נקבעה בהצלחה"
-                        else "לא ניתן לקבוע התראה — בדוק הרשאות שעון מעורר"
-                    )
+                    if (success) {
+                        snackbarHostState.showSnackbar("ההתראה נקבעה בהצלחה לכל יום")
+                    } else if (needsPermission) {
+                        val pResult = snackbarHostState.showSnackbar(
+                            message = "לצורך התראות מדויקות נדרשת הרשאה מיוחדת",
+                            actionLabel = "הגדרות",
+                            duration = SnackbarDuration.Long
+                        )
+                        if (pResult == SnackbarResult.ActionPerformed) {
+                            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                                    data = android.net.Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(intent)
+                            }
+                        }
+                    } else {
+                        snackbarHostState.showSnackbar("אירעה שגיאה בקביעת ההתראה")
+                    }
                 }
             }
         )

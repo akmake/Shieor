@@ -203,6 +203,20 @@ class MamaarimViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun updateMamaarContent(id: String, newText: String) {
+        viewModelScope.launch {
+            saveTextCache(id, newText)
+            // Refresh if currently viewing this article
+            if (_selectedMamaar.value?.id == id) {
+                _selectedMamaar.value = buildMamaar(id, newText)
+            }
+        }
+    }
+
+    fun loadRawText(id: String): String? {
+        return loadTextCache(id)
+    }
+
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
     private fun buildMamaar(id: String, text: String, title: String = ""): Mamaar {

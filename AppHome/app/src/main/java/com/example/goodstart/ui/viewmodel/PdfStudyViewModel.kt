@@ -160,6 +160,12 @@ class PdfStudyViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun goToPage(pageIndex: Int) {
+        val book = _state.value.currentBook ?: return
+        val safePage = pageIndex.coerceIn(0, book.totalPages - 1)
+        renderPage(safePage)
+    }
+
     private fun renderPage(pageIndex: Int) {
         val activeBook = _state.value.currentBook ?: return
         viewModelScope.launch(Dispatchers.IO) {
