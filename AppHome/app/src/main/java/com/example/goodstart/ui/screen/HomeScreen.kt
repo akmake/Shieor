@@ -48,6 +48,7 @@ fun HomeScreen(
     onRabbenuTamClick: () -> Unit = {},
     onPdfLibraryClick: () -> Unit = {},
     onMamaarimClick: () -> Unit = {},
+    onStudyTrackerClick: () -> Unit = {},
     vm: HomeViewModel = viewModel()
 ) {
     val state by vm.state.collectAsState()
@@ -165,6 +166,10 @@ fun HomeScreen(
                 item {
                     Spacer(modifier = Modifier.height(8.dp))
                     MamaarimCard(onClick = onMamaarimClick)
+                }
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    StudyTrackerCard(onClick = onStudyTrackerClick)
                 }
             }
         }
@@ -368,6 +373,46 @@ private fun MamaarimCard(onClick: () -> Unit) {
             }
             Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
                 Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFF2E7D32), modifier = Modifier.size(18.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun StudyTrackerCard(onClick: () -> Unit) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        shadowElevation = 0.dp,
+        color = Color(0xFFFFF8E1),
+        border = BorderStroke(1.dp, Color(0xFFFFE082))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFF57F17).copy(alpha = 0.1f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(Icons.Default.Checklist, contentDescription = null, tint = Color(0xFFF57F17), modifier = Modifier.size(24.dp))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Text("מעקב לימודים", fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = BaHaYetzira, color = Color(0xFFE65100), maxLines = 1)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("סמן לימודים שהושלמו · צפה בהיסטוריה", fontSize = 13.sp, color = Color(0xFFF57F17), maxLines = 2, lineHeight = 18.sp)
+            }
+            Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(Color.White), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.ChevronLeft, null, tint = Color(0xFFF57F17), modifier = Modifier.size(18.dp))
             }
         }
     }

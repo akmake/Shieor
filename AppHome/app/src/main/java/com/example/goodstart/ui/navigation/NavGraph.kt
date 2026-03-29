@@ -25,7 +25,8 @@ fun AppNavGraph() {
                 onLocationZonesClick = { nav.navigate("locationZones") },
                 onRabbenuTamClick = { nav.navigate("rabbenuTam") },
                 onPdfLibraryClick = { nav.navigate("pdfLibrary") },
-                onMamaarimClick = { nav.navigate("mamaarim") }
+                onMamaarimClick = { nav.navigate("mamaarim") },
+                onStudyTrackerClick = { nav.navigate("studyTracker") }
             )
         }
 
@@ -87,14 +88,17 @@ fun AppNavGraph() {
             )
         }
 
-        composable(
-            "mamaarReader/{id}",
+        composable("mamaarReader/{id}",
             arguments = listOf(navArgument("id") { type = NavType.StringType })
         ) { back ->
             MamaarReaderScreen(
                 mamaarId = back.arguments?.getString("id") ?: "",
                 onBack   = { nav.popBackStack() }
             )
+        }
+
+        composable("studyTracker") {
+            StudyTrackerScreen(onBack = { nav.popBackStack() })
         }
     }
 }

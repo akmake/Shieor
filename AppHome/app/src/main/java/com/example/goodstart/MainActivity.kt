@@ -8,6 +8,8 @@ import androidx.core.view.WindowCompat
 import com.example.goodstart.geofence.GeofenceCheckWorker
 import com.example.goodstart.geofence.GeofenceHelper
 import com.example.goodstart.network.StudySyncWorker
+import com.example.goodstart.notification.MidnightReminderReceiver
+import com.example.goodstart.notification.ZmanBriefWorker
 import com.example.goodstart.sync.UserManager
 import com.example.goodstart.sync.UserSyncWorker
 import com.example.goodstart.ui.navigation.AppNavGraph
@@ -40,6 +42,12 @@ class MainActivity : ComponentActivity() {
             GeofenceHelper.registerActiveGeofences(this)
             GeofenceCheckWorker.enqueue(this)
         }
+
+        // Create notification channels and re-schedule if enabled
+        ZmanBriefWorker.createChannel(this)
+        MidnightReminderReceiver.createChannel(this)
+        if (ZmanBriefWorker.isEnabled(this)) ZmanBriefWorker.enqueue(this)
+        if (MidnightReminderReceiver.isEnabled(this)) MidnightReminderReceiver.schedule(this)
 
         enableEdgeToEdge()
         WindowCompat.setDecorFitsSystemWindows(window, false)
