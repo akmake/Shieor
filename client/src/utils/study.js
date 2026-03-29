@@ -8,6 +8,7 @@ export const STUDY_ROUTES = {
   tanya: '/tanya',
   seferHamitzvot: '/sefer-hamitzvot',
   shnayimMikra: '/shnayim-mikra',
+  tehillim: '/tehillim',
 };
 const SEFARIA_BASE_URL = 'https://www.sefaria.org';
 const TORAHCALC_BASE_URL = 'https://www.torahcalc.com';

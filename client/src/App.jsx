@@ -8,6 +8,7 @@ import RambamOnePage from './pages/RambamOnePage';
 import TanyaPage from './pages/TanyaPage';
 import SeferHamitzvotPage from './pages/SeferHamitzvotPage';
 import ShnayimMikraPage from './pages/ShnayimMikraPage';
+import StudyPage from './pages/StudyPage';
 import SettingsPage from './pages/SettingsPage';
 import ZmanimPage from './pages/ZmanimPage';
 import AdminPage from './pages/AdminPage';
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="tanya" element={<TanyaPage />} />
           <Route path="sefer-hamitzvot" element={<SeferHamitzvotPage />} />
           <Route path="shnayim-mikra" element={<ShnayimMikraPage />} />
+          <Route path="tehillim" element={<StudyPage studyKey="tehillim" />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="zmanim" element={<ZmanimPage />} />
           <Route path="admin" element={<AdminPage />} />
