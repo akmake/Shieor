@@ -40,6 +40,7 @@ fun AlarmSetupBottomSheet(
     var offsetMinutes by remember { mutableIntStateOf(existingAlarm?.offsetMinutes ?: 0) }
     var isBefore      by remember { mutableStateOf(existingAlarm?.isBefore ?: true) }
     var ringCount     by remember { mutableIntStateOf(existingAlarm?.ringCount ?: 3) }
+    var ringDuration  by remember { mutableIntStateOf(existingAlarm?.ringDurationSeconds ?: 20) }
     var ringtoneUri   by remember { mutableStateOf(existingAlarm?.ringtoneUri ?: "") }
     var ringtoneName  by remember { mutableStateOf(if (existingAlarm?.ringtoneUri?.isNotEmpty() == true) "צלצול נבחר" else "ברירת מחדל") }
 
@@ -164,6 +165,29 @@ fun AlarmSetupBottomSheet(
             HorizontalDivider()
             Spacer(Modifier.height(16.dp))
 
+            // ── Ring duration ────────────────────────────────────────────────
+            Text("משך כל צלצול", fontSize = 14.sp, color = Color.Gray)
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { if (ringDuration > 5) ringDuration -= 5 }) {
+                    Text("−", fontSize = 24.sp, color = Primary, fontWeight = FontWeight.Bold)
+                }
+                Text(
+                    text = "$ringDuration שניות",
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.width(100.dp),
+                    textAlign = TextAlign.Center
+                )
+                IconButton(onClick = { if (ringDuration < 120) ringDuration += 5 }) {
+                    Text("+", fontSize = 24.sp, color = Primary, fontWeight = FontWeight.Bold)
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
+            HorizontalDivider()
+            Spacer(Modifier.height(16.dp))
+
             // ── Ringtone picker ──────────────────────────────────────────────
             OutlinedButton(
                 onClick = {
@@ -205,11 +229,12 @@ fun AlarmSetupBottomSheet(
                 Button(
                     onClick = {
                         val config = AlarmConfig(
-                            zmanLabel     = zman.label,
-                            offsetMinutes = offsetMinutes,
-                            isBefore      = isBefore,
-                            ringCount     = ringCount,
-                            ringtoneUri   = ringtoneUri
+                            zmanLabel           = zman.label,
+                            offsetMinutes       = offsetMinutes,
+                            isBefore            = isBefore,
+                            ringCount           = ringCount,
+                            ringDurationSeconds = ringDuration,
+                            ringtoneUri         = ringtoneUri
                         )
                         val ok = vm.scheduleAlarm(zman, config)
                         onAlarmSetResult(ok)

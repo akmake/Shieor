@@ -90,16 +90,19 @@ object ZmanimRescheduler {
             val alarmMs  = if (config.isBefore) zmanMillis - offsetMs else zmanMillis + offsetMs
             if (alarmMs <= System.currentTimeMillis()) return false
 
+            val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) return false
+
             val intent = Intent(context, ZmanimAlarmReceiver::class.java).apply {
                 putExtra(ZmanimAlarmReceiver.EXTRA_ZMAN_LABEL,   config.zmanLabel)
                 putExtra(ZmanimAlarmReceiver.EXTRA_RING_COUNT,   config.ringCount)
+                putExtra(ZmanimAlarmReceiver.EXTRA_RING_DURATION, config.ringDurationSeconds)
                 putExtra(ZmanimAlarmReceiver.EXTRA_RINGTONE_URI, config.ringtoneUri)
             }
             val pi = PendingIntent.getBroadcast(
                 context, config.zmanLabel.hashCode(), intent,
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            val am = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmMs, pi)
             true
         } catch (_: Exception) { false }

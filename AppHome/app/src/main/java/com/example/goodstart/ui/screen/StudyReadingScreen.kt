@@ -44,7 +44,11 @@ private val HE_NUMS = arrayOf(
     "", "א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י",
     "יא", "יב", "יג", "יד", "טו", "טז", "יז", "יח", "יט", "כ",
     "כא", "כב", "כג", "כד", "כה", "כו", "כז", "כח", "כט", "ל",
-    "לא", "לב", "לז", "לח", "לט", "מ", "נ", "ס"
+    "לא", "לב", "לג", "לד", "לה", "לו", "לז", "לח", "לט", "מ",
+    "מא", "מב", "מג", "מד", "מה", "מו", "מז", "מח", "מט", "נ",
+    "נא", "נב", "נג", "נד", "נה", "נו", "נז", "נח", "נט", "ס",
+    "סא", "סב", "סג", "סד", "סה", "סו", "סז", "סח", "סט", "ע",
+    "עא", "עב", "עג", "עד", "עה", "עו"
 )
 
 private fun toHebNum(n: Int) = if (n in 1 until HE_NUMS.size) HE_NUMS[n] else n.toString()
@@ -289,16 +293,37 @@ private fun SectionRow(section: Section, isShnayim: Boolean, isTanya: Boolean, c
 @Composable
 private fun HeaderRow(section: Section, fontSize: Int) {
     val isAliyah = section.isAliyahHeader
-    Text(
-        text = section.he ?: "",
-        modifier = Modifier.fillMaxWidth().padding(top = if (isAliyah) 24.dp else 12.dp, bottom = 12.dp),
-        textAlign = TextAlign.Center,
-        fontSize = if (isAliyah) 21.sp else 32.sp,
-        fontWeight = if (isAliyah) FontWeight.Normal else FontWeight.Bold,
-        fontFamily = SblHebrew,
-        color = Primary,
-        style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
-    )
+    if (isAliyah) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(Primary.copy(alpha = 0.15f)))
+            Text(
+                text = section.he ?: "",
+                modifier = Modifier.padding(horizontal = 16.dp),
+                textAlign = TextAlign.Center,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = SblHebrew,
+                color = Primary,
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+            )
+            Box(modifier = Modifier.weight(1f).height(1.dp).background(Primary.copy(alpha = 0.15f)))
+        }
+    } else {
+        Text(
+            text = section.he ?: "",
+            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 12.dp),
+            textAlign = TextAlign.Center,
+            fontSize = 30.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = SblHebrew,
+            color = Primary,
+            style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+        )
+    }
 }
 
 @Composable
@@ -322,14 +347,18 @@ private fun HalachaRow(section: Section, fontSize: Int) {
 
 @Composable
 private fun VerseRow(section: Section, isShnayim: Boolean, isTanya: Boolean, connected: Boolean, fontSize: Int) {
-    val prefix = if (!isTanya && section.verseNum != null) "${toHebNum(section.verseNum)}.\u00A0" else ""
+    val hasRashi = !section.rashi.isNullOrEmpty()
     val he = section.he ?: ""
     val en = section.en ?: ""
+    val showPrefix = !isTanya && section.verseNum != null
 
-    Column(modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
+    Column(modifier = Modifier.fillMaxWidth().padding(bottom = if (hasRashi) 20.dp else 6.dp)) {
         if (isShnayim && connected) {
             val annotated = buildAnnotatedString {
-                append("$prefix$he $prefix$he")
+                if (showPrefix) { withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold, fontSize = (fontSize - 1).sp)) { append(toHebNum(section.verseNum!!)); append("\u00A0") } }
+                append("$he ")
+                if (showPrefix) { withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold, fontSize = (fontSize - 1).sp)) { append(toHebNum(section.verseNum!!)); append("\u00A0") } }
+                append(he)
                 if (en.isNotEmpty()) { append(" "); withStyle(SpanStyle(color = Muted)) { append(en) } }
             }
             Text(
@@ -343,11 +372,29 @@ private fun VerseRow(section: Section, isShnayim: Boolean, isTanya: Boolean, con
                 style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
             )
         } else {
-            HebrewText("$prefix$he", fontSize)
-            if (isShnayim) HebrewText("$prefix$he", fontSize)
+            val annotated = buildAnnotatedString {
+                if (showPrefix) {
+                    withStyle(SpanStyle(color = Primary, fontWeight = FontWeight.Bold, fontSize = (fontSize - 1).sp)) {
+                        append(toHebNum(section.verseNum!!))
+                    }
+                    append(" ")
+                }
+                append(he)
+            }
+            Text(
+                text = annotated,
+                fontSize = fontSize.sp,
+                fontFamily = SblHebrew,
+                color = Color.Black,
+                lineHeight = (fontSize * 2f).sp,
+                textAlign = TextAlign.Justify,
+                modifier = Modifier.fillMaxWidth(),
+                style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
+            )
+            if (isShnayim) HebrewText(he, fontSize)
             if (en.isNotEmpty()) Text(en, fontSize = maxOf(14, fontSize - 3).sp, color = Muted, lineHeight = (maxOf(14, fontSize - 3) * 1.3f).sp, modifier = Modifier.fillMaxWidth())
         }
-        if (!section.rashi.isNullOrEmpty()) RashiBlock(section.rashi, fontSize)
+        if (hasRashi) RashiBlock(section.rashi!!, fontSize)
     }
 }
 
@@ -368,10 +415,19 @@ private fun HebrewText(text: String, fontSize: Int) {
 @Composable
 private fun RashiBlock(rashiList: List<Section.RashiItem>, fontSize: Int) {
     val rashiSize = maxOf(14, fontSize - 3)
-    Row(modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 4.dp).height(IntrinsicSize.Min)) {
-        Box(modifier = Modifier.width(3.dp).fillMaxHeight().background(Primary.copy(alpha = 0.6f)))
-        Column(modifier = Modifier.padding(start = 12.dp, top = 2.dp, bottom = 2.dp)) {
-            Text("רש\u05F4י", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Amber, modifier = Modifier.padding(bottom = 4.dp))
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 10.dp, bottom = 4.dp)
+            .background(
+                color = Amber.copy(alpha = 0.04f),
+                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)
+            )
+            .height(IntrinsicSize.Min)
+    ) {
+        Box(modifier = Modifier.width(3.dp).fillMaxHeight().background(Amber.copy(alpha = 0.55f)))
+        Column(modifier = Modifier.padding(start = 14.dp, end = 8.dp, top = 8.dp, bottom = 6.dp)) {
+            Text("רש\u05F4י", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Amber, modifier = Modifier.padding(bottom = 6.dp))
             rashiList.forEach { item ->
                 if (!item.he.isNullOrEmpty()) {
                     Text(
@@ -379,8 +435,8 @@ private fun RashiBlock(rashiList: List<Section.RashiItem>, fontSize: Int) {
                         fontSize = rashiSize.sp,
                         fontFamily = SblHebrew,
                         color = Color.Black.copy(alpha = 0.85f),
-                        lineHeight = (rashiSize * 1.4f).sp,
-                        modifier = Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                        lineHeight = (rashiSize * 1.7f).sp,
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
                         style = LocalTextStyle.current.copy(textDirection = TextDirection.Rtl)
                     )
                 }

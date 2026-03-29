@@ -21,6 +21,7 @@ class ZmanimAlarmService : Service() {
     companion object {
         const val CHANNEL_ID = "zmanim_alarm_channel"
         const val EXTRA_RING_COUNT = "ring_count"
+        const val EXTRA_RING_DURATION = "ring_duration"
         const val EXTRA_RINGTONE_URI = "ringtone_uri"
         const val EXTRA_ZMAN_LABEL = "zman_label"
         const val ACTION_STOP_ALARM = "com.example.goodstart.STOP_ALARM"
@@ -29,11 +30,13 @@ class ZmanimAlarmService : Service() {
 
     private var mediaPlayer: MediaPlayer? = null
     private var ringCount = 3
+    private var ringDurationMs = 20_000L
     private var currentRing = 0
     private var ringtoneUri: Uri? = null
     private var audioManager: AudioManager? = null
     private var previousVolume = -1
     private var stopReceiver: BroadcastReceiver? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
 
     override fun onCreate() {
         super.onCreate()
@@ -48,6 +51,7 @@ class ZmanimAlarmService : Service() {
 
         val zmanLabel = intent?.getStringExtra(EXTRA_ZMAN_LABEL) ?: "זמן הלכתי"
         ringCount = intent?.getIntExtra(EXTRA_RING_COUNT, 3) ?: 3
+        ringDurationMs = (intent?.getIntExtra(EXTRA_RING_DURATION, 20) ?: 20) * 1000L
         val ringtoneUriStr = intent?.getStringExtra(EXTRA_RINGTONE_URI) ?: ""
         ringtoneUri = if (ringtoneUriStr.isNotEmpty()) {
             Uri.parse(ringtoneUriStr)
@@ -74,6 +78,7 @@ class ZmanimAlarmService : Service() {
     }
 
     private fun playRing() {
+        handler.removeCallbacksAndMessages(null)
         try {
             mediaPlayer?.release()
             mediaPlayer = MediaPlayer().apply {
@@ -84,19 +89,25 @@ class ZmanimAlarmService : Service() {
                         .build()
                 )
                 setDataSource(this@ZmanimAlarmService, ringtoneUri!!)
+                isLooping = true
                 prepare()
-                setOnCompletionListener {
-                    currentRing++
-                    if (currentRing < ringCount) playRing() else stopAlarm()
-                }
                 start()
             }
+            // Stop this ring after the configured duration
+            handler.postDelayed({
+                mediaPlayer?.stop()
+                mediaPlayer?.release()
+                mediaPlayer = null
+                currentRing++
+                if (currentRing < ringCount) playRing() else stopAlarm()
+            }, ringDurationMs)
         } catch (e: Exception) {
             stopAlarm()
         }
     }
 
     private fun stopAlarm() {
+        handler.removeCallbacksAndMessages(null)
         mediaPlayer?.stop()
         mediaPlayer?.release()
         mediaPlayer = null
@@ -162,6 +173,7 @@ class ZmanimAlarmService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
         stopReceiver?.let { unregisterReceiver(it) }
         mediaPlayer?.release()
         mediaPlayer = null

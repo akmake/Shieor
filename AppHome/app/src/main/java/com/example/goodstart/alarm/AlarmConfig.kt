@@ -5,5 +5,6 @@ data class AlarmConfig(
     val offsetMinutes: Int = 0,
     val isBefore: Boolean = true,
     val ringCount: Int = 3,
+    val ringDurationSeconds: Int = 20,
     val ringtoneUri: String = ""
 )

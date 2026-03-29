@@ -110,22 +110,27 @@ class ZmanimViewModel(application: Application) : AndroidViewModel(application) 
         val alarmMs  = if (config.isBefore) zman.timeMillis - offsetMs else zman.timeMillis + offsetMs
         if (alarmMs <= System.currentTimeMillis()) return false
 
-        val am     = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val am = ctx.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) return false
+
         val intent = Intent(ctx, ZmanimAlarmReceiver::class.java).apply {
             putExtra(ZmanimAlarmReceiver.EXTRA_ZMAN_LABEL,   zman.label)
             putExtra(ZmanimAlarmReceiver.EXTRA_RING_COUNT,   config.ringCount)
+            putExtra(ZmanimAlarmReceiver.EXTRA_RING_DURATION, config.ringDurationSeconds)
             putExtra(ZmanimAlarmReceiver.EXTRA_RINGTONE_URI, config.ringtoneUri)
         }
         val pi = PendingIntent.getBroadcast(
             ctx, zman.label.hashCode(), intent,
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmMs, pi)
-        alarmPrefs.edit().putString("alarm_${zman.label}", gson.toJson(config)).apply()
-        _state.value = _state.value.copy(
-            alarms = _state.value.alarms.toMutableMap().also { it[zman.label] = config }
-        )
-        return true
+        return try {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, alarmMs, pi)
+            alarmPrefs.edit().putString("alarm_${zman.label}", gson.toJson(config)).apply()
+            _state.value = _state.value.copy(
+                alarms = _state.value.alarms.toMutableMap().also { it[zman.label] = config }
+            )
+            true
+        } catch (_: SecurityException) { false }
     }
 
     fun cancelAlarm(zmanLabel: String) {
