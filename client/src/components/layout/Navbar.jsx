@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { BookOpenText, Clock, House, Layers3, Settings, Sparkles, ScrollText, Menu, X, FileText } from 'lucide-react';
+import { BookOpenText, Clock, House, Layers3, Settings, Sparkles, ScrollText, Menu, X, FileText, BookOpen } from 'lucide-react';
 
 const ITEMS = [
   { to: '/', label: 'בית', icon: House, end: true },
@@ -9,6 +9,7 @@ const ITEMS = [
   { to: '/tanya', label: 'תניא', icon: Sparkles },
   { to: '/shnayim-mikra', label: 'שניים מקרא', icon: ScrollText },
   { to: '/zmanim', label: 'זמנים', icon: Clock },
+  { to: '/gemara', label: 'גמרא', icon: BookOpen },
   { to: '/admin', label: 'מאמרים', icon: FileText },
   { to: '/settings', label: 'הגדרות', icon: Settings },
 ];

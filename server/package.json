@@ -9,14 +9,16 @@
     "dev": "nodemon index.js"
   },
   "dependencies": {
-    "canvas": "^3.2.2",
+    "@anthropic-ai/sdk": "^0.82.0",
+    "canvas": "^3.2.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "mongoose": "^9.3.3",
     "multer": "^2.1.1",
+    "mupdf": "^1.27.0",
     "pdf-parse": "^1.1.4",
-    "pdfjs-dist": "^5.5.207",
+    "pdfjs-dist": "^5.6.205",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
